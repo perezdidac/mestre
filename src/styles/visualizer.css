@@ -1,0 +1,313 @@
+/* Visualizer, Spectrum RTA, and Meter Bridge Styles */
+
+.spectrum-card {
+    background: var(--bg-card);
+    backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--card-radius);
+    padding: 18px 20px;
+    box-shadow: var(--shadow-card);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.spectrum-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.spectrum-legend {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.legend-dot.cyan { background: var(--color-target); box-shadow: 0 0 8px var(--color-target); }
+.legend-dot.amber { background: var(--color-ref); box-shadow: 0 0 8px var(--color-ref); }
+.legend-dot.emerald { background: var(--color-match); box-shadow: 0 0 8px var(--color-match); }
+.legend-dot.purple { background: var(--color-mastered); box-shadow: 0 0 8px var(--color-mastered); }
+
+.spectrum-canvas-container {
+    position: relative;
+    width: 100%;
+    height: 280px;
+    background: rgba(7, 10, 18, 0.9);
+    border-radius: 10px;
+    border: 1px solid var(--border-subtle);
+    overflow: hidden;
+}
+
+.spectrum-canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    cursor: crosshair;
+}
+
+/* EQ Difference Curve Canvas Card */
+.eq-plot-card {
+    background: var(--bg-card);
+    backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--card-radius);
+    padding: 18px 20px;
+    box-shadow: var(--shadow-card);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.eq-plot-canvas-container {
+    position: relative;
+    width: 100%;
+    height: 160px;
+    background: rgba(7, 10, 18, 0.9);
+    border-radius: 10px;
+    border: 1px solid var(--border-subtle);
+    overflow: hidden;
+}
+
+.eq-plot-canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    cursor: pointer;
+}
+
+/* Precision Meter Bridge Layout */
+.meters-section {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.meter-bridge-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+}
+
+.meter-card {
+    background: var(--bg-card);
+    backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--card-radius);
+    padding: 16px;
+    box-shadow: var(--shadow-card);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.meter-card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    position: relative;
+}
+
+.meter-tag {
+    font-family: var(--font-heading);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+
+.target-tag { background: rgba(0, 240, 255, 0.15); color: var(--color-target); }
+.ref-tag { background: rgba(245, 158, 11, 0.15); color: var(--color-ref); }
+.master-tag { background: rgba(168, 85, 247, 0.15); color: var(--color-mastered); }
+.gr-tag { background: rgba(239, 68, 68, 0.15); color: #f87171; }
+
+.meter-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.clip-led {
+    margin-left: auto;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 800;
+    color: #475569;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: var(--transition-fast);
+}
+
+.clip-led.active {
+    background: var(--color-danger);
+    color: #ffffff;
+    box-shadow: 0 0 14px var(--color-danger);
+}
+
+.meter-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    background: rgba(9, 13, 23, 0.6);
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--border-subtle);
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.stat-label {
+    font-size: 9px;
+    font-weight: 600;
+    color: var(--text-muted);
+    letter-spacing: 0.05em;
+}
+
+.stat-val {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.stat-val.highlight {
+    color: var(--color-mastered);
+}
+
+/* Horizontal Meter Bar */
+.meter-bar-container {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.meter-bar-track {
+    position: relative;
+    width: 100%;
+    height: 10px;
+    background: rgba(9, 13, 23, 0.85);
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid var(--border-subtle);
+}
+
+.meter-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: linear-gradient(90deg, #10b981 0%, #00f0ff 70%, #f59e0b 85%, #ef4444 100%);
+    transition: width 0.08s ease-out;
+}
+
+.meter-bar-fill.ref-fill {
+    background: linear-gradient(90deg, #10b981 0%, #f59e0b 80%, #ef4444 100%);
+}
+
+.meter-bar-fill.master-fill {
+    background: linear-gradient(90deg, #10b981 0%, #a855f7 70%, #f59e0b 85%, #ef4444 100%);
+}
+
+.meter-peak-hold {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #ffffff;
+    box-shadow: 0 0 6px #ffffff;
+    transition: left 0.15s ease-out;
+}
+
+.target-marker {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: rgba(255, 255, 255, 0.6);
+    pointer-events: none;
+}
+
+.meter-scale-labels {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--text-dim);
+    padding: 0 2px;
+}
+
+/* Dynamics Gain Reduction Ladders */
+.gr-meters-flex {
+    display: flex;
+    gap: 16px;
+    justify-content: space-around;
+    padding: 8px 0;
+}
+
+.gr-column {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+}
+
+.gr-column-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: 0.05em;
+}
+
+.gr-bar-track {
+    width: 24px;
+    height: 70px;
+    background: rgba(9, 13, 23, 0.9);
+    border-radius: 4px;
+    border: 1px solid var(--border-subtle);
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    overflow: hidden;
+}
+
+.gr-bar-fill {
+    width: 100%;
+    transition: height 0.06s ease-out;
+}
+
+.gr-bar-fill.comp-fill {
+    background: linear-gradient(0deg, rgba(245, 158, 11, 0.2) 0%, #f59e0b 100%);
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.4);
+}
+
+.gr-bar-fill.lim-fill {
+    background: linear-gradient(0deg, rgba(239, 68, 68, 0.2) 0%, #ef4444 100%);
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
+}
+
+.gr-value {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-secondary);
+}

@@ -1,0 +1,76 @@
+/* Modern Dark Studio Mastering Design System */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@400;500;600;700;800&display=swap');
+
+:root {
+    /* Color Palette */
+    --bg-primary: #07090e;
+    --bg-secondary: #0d121d;
+    --bg-card: rgba(16, 22, 36, 0.78);
+    --bg-card-hover: rgba(22, 31, 51, 0.85);
+    --bg-panel: #111827;
+    --bg-input: rgba(10, 15, 26, 0.85);
+
+    /* Neon Accent Highlights */
+    --color-target: #00f0ff;
+    --color-target-glow: rgba(0, 240, 255, 0.35);
+    --color-ref: #f59e0b;
+    --color-ref-glow: rgba(245, 158, 11, 0.35);
+    --color-match: #10b981;
+    --color-match-glow: rgba(16, 185, 129, 0.4);
+    --color-mastered: #a855f7;
+    --color-mastered-glow: rgba(168, 85, 247, 0.35);
+    --color-danger: #ef4444;
+    --color-danger-glow: rgba(239, 68, 68, 0.4);
+
+    /* Text & Typography */
+    --font-heading: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --text-dim: #475569;
+
+    /* Borders & Glassmorphism */
+    --border-subtle: rgba(255, 255, 255, 0.07);
+    --border-bright: rgba(255, 255, 255, 0.16);
+    --border-highlight: rgba(0, 240, 255, 0.5);
+    --glass-blur: blur(16px);
+    --card-radius: 14px;
+    --pill-radius: 9999px;
+
+    /* Shadows & Glows */
+    --shadow-card: 0 10px 30px -5px rgba(0, 0, 0, 0.6), 0 0 0 1px var(--border-subtle);
+    --shadow-glow-cyan: 0 0 25px -4px var(--color-target-glow);
+    --shadow-glow-emerald: 0 0 30px -4px var(--color-match-glow);
+    --shadow-glow-amber: 0 0 25px -4px var(--color-ref-glow);
+
+    /* Transitions */
+    --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: var(--bg-primary);
+    background-image: 
+        radial-gradient(circle at 15% 10%, rgba(0, 240, 255, 0.05) 0%, transparent 40%),
+        radial-gradient(circle at 85% 15%, rgba(245, 158, 11, 0.05) 0%, transparent 40%),
+        radial-gradient(circle at 50% 60%, rgba(16, 185, 129, 0.04) 0%, transparent 50%),
+        linear-gradient(180deg, #07090e 0%, #0b0f19 100%);
+    background-attachment: fixed;
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    font-size: 14px;
+    line-height: 1.5;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+}
