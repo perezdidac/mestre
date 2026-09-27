@@ -176,24 +176,24 @@ export class MetersView {
 
     setTargetMetrics(stats) {
         if (!stats) return;
-        this.targetLufsVal.textContent = `${stats.integratedLUFS.toFixed(1)} LUFS`;
-        this.targetPeakVal.textContent = `${stats.peakDb.toFixed(1)} dB`;
-        this.targetDrVal.textContent = `DR ${Math.round(stats.dynamicRangeDb)}`;
+        this.targetLufsVal.textContent = `${stats.integratedLUFS.toFixed(1)}\u00A0LUFS`;
+        this.targetPeakVal.textContent = `${stats.peakDb.toFixed(1)}\u00A0dB`;
+        this.targetDrVal.textContent = `DR\u00A0${Math.round(stats.dynamicRangeDb)}`;
         this.targetLufsBar.style.width = `${this.lufsToPercent(stats.integratedLUFS)}%`;
     }
 
     setReferenceMetrics(stats) {
         if (!stats) return;
-        this.refLufsVal.textContent = `${stats.integratedLUFS.toFixed(1)} LUFS`;
-        this.refPeakVal.textContent = `${stats.peakDb.toFixed(1)} dB`;
-        this.refDrVal.textContent = `DR ${Math.round(stats.dynamicRangeDb)}`;
+        this.refLufsVal.textContent = `${stats.integratedLUFS.toFixed(1)}\u00A0LUFS`;
+        this.refPeakVal.textContent = `${stats.peakDb.toFixed(1)}\u00A0dB`;
+        this.refDrVal.textContent = `DR\u00A0${Math.round(stats.dynamicRangeDb)}`;
         this.refLufsBar.style.width = `${this.lufsToPercent(stats.integratedLUFS)}%`;
     }
 
     setMasteredMetrics(stats) {
         if (!stats) return;
-        this.masterLufsVal.textContent = `${stats.integratedLUFS.toFixed(1)} LUFS`;
-        this.masterPeakVal.textContent = `${stats.peakDb.toFixed(1)} dB`;
+        this.masterLufsVal.textContent = `${stats.integratedLUFS.toFixed(1)}\u00A0LUFS`;
+        this.masterPeakVal.textContent = `${stats.peakDb.toFixed(1)}\u00A0dB`;
         this.masterLufsBar.style.width = `${this.lufsToPercent(stats.integratedLUFS)}%`;
 
         if (stats.peakDb >= -0.1) {
@@ -205,12 +205,12 @@ export class MetersView {
         // Compressor GR (0 to 12 dB scale)
         const compPct = Math.min(100, (compGR / 12) * 100);
         this.compGrFill.style.height = `${compPct}%`;
-        this.compGrVal.textContent = `-${compGR.toFixed(1)} dB`;
+        this.compGrVal.textContent = `${compGR > 0.05 ? '-' : ''}${compGR.toFixed(1)}\u00A0dB`;
 
         // Limiter GR (0 to 8 dB scale)
         const limPct = Math.min(100, (limGR / 8) * 100);
         this.limGrFill.style.height = `${limPct}%`;
-        this.limGrVal.textContent = `-${limGR.toFixed(1)} dB`;
+        this.limGrVal.textContent = `${limGR > 0.05 ? '-' : ''}${limGR.toFixed(1)}\u00A0dB`;
 
         // Peak Hold
         if (peakDb > this.peakHoldDb) {

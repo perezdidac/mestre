@@ -146,7 +146,7 @@ export class TransportControls {
         if (this.sliderInputGain) {
             this.sliderInputGain.addEventListener('input', (e) => {
                 const db = parseFloat(e.target.value);
-                this.valInputGain.textContent = `${db > 0 ? '+' : ''}${db.toFixed(1)} dB`;
+                this.valInputGain.textContent = `${db > 0 ? '+' : ''}${db.toFixed(1)}\u00A0dB`;
                 this.callbacks.onInputGainChange(db);
             });
         }
@@ -154,7 +154,7 @@ export class TransportControls {
         if (this.sliderCompThresh) {
             this.sliderCompThresh.addEventListener('input', (e) => {
                 const db = parseFloat(e.target.value);
-                this.valCompThresh.textContent = `${db.toFixed(1)} dB`;
+                this.valCompThresh.textContent = `${db.toFixed(1)}\u00A0dB`;
                 this.triggerDynamicsUpdate();
             });
         }
@@ -170,7 +170,7 @@ export class TransportControls {
         if (this.sliderLimiterCeil) {
             this.sliderLimiterCeil.addEventListener('input', (e) => {
                 const db = parseFloat(e.target.value);
-                this.valLimiterCeil.textContent = `${db.toFixed(1)} dB`;
+                this.valLimiterCeil.textContent = `${db.toFixed(1)}\u00A0dB`;
                 this.callbacks.onLimiterChange(db);
             });
         }
@@ -278,7 +278,7 @@ export class TransportControls {
 
         if (params.compThresholdDb !== undefined && this.sliderCompThresh) {
             this.sliderCompThresh.value = params.compThresholdDb;
-            this.valCompThresh.textContent = `${params.compThresholdDb.toFixed(1)} dB`;
+            this.valCompThresh.textContent = `${params.compThresholdDb.toFixed(1)}\u00A0dB`;
         }
 
         if (params.compRatio !== undefined && this.sliderCompRatio) {
@@ -288,12 +288,12 @@ export class TransportControls {
 
         if (params.limiterCeilingDb !== undefined && this.sliderLimiterCeil) {
             this.sliderLimiterCeil.value = params.limiterCeilingDb;
-            this.valLimiterCeil.textContent = `${params.limiterCeilingDb.toFixed(1)} dB`;
+            this.valLimiterCeil.textContent = `${params.limiterCeilingDb.toFixed(1)}\u00A0dB`;
         }
 
         if (params.inputGainDb !== undefined && this.sliderInputGain) {
             this.sliderInputGain.value = params.inputGainDb;
-            this.valInputGain.textContent = `${params.inputGainDb > 0 ? '+' : ''}${params.inputGainDb.toFixed(1)} dB`;
+            this.valInputGain.textContent = `${params.inputGainDb > 0 ? '+' : ''}${params.inputGainDb.toFixed(1)}\u00A0dB`;
         }
     }
 }

@@ -25,12 +25,19 @@ export class SpectrumView {
         this.realtimeTargetData = null;
         this.realtimeMasteredData = null;
 
+        this.targetCurveType = 'pink_noise'; // 'none' | 'pink_noise' | 'harman' | 'pop_master'
+
         this.hoverFreq = null;
         this.hoverX = -1;
         this.hoverY = -1;
 
         this.setupInteractions();
         this.resize();
+    }
+
+    setTargetCurve(type) {
+        this.targetCurveType = type;
+        this.draw();
     }
 
     resize() {
@@ -127,6 +134,11 @@ export class SpectrumView {
 
         // 1. Background Grid & Frequency / dB markings
         this.drawGrid(ctx, w, h);
+
+        // 1.5 Professional Mastering Target Reference Guide Curves
+        if (this.targetCurveType && this.targetCurveType !== 'none') {
+            this.drawTargetGuideCurve(ctx);
+        }
 
         // 2. Real-time RTA FFT Spectrum (Mastered output)
         if (this.realtimeMasteredData) {
@@ -337,6 +349,71 @@ export class SpectrumView {
         ctx.strokeStyle = strokeColor;
         ctx.lineWidth = 1.2;
         ctx.stroke();
+
+        ctx.restore();
+    }
+
+    drawTargetGuideCurve(ctx) {
+        ctx.save();
+        ctx.setLineDash([4, 4]);
+
+        let label = '';
+        let strokeColor = 'rgba(245, 158, 11, 0.65)'; // Amber gold
+
+        ctx.beginPath();
+        let started = false;
+
+        const samplePoints = 64;
+        const minLog = Math.log10(this.minFreq);
+        const maxLog = Math.log10(this.maxFreq);
+
+        for (let i = 0; i <= samplePoints; i++) {
+            const freq = Math.pow(10, minLog + (i / samplePoints) * (maxLog - minLog));
+            let db = -24;
+
+            if (this.targetCurveType === 'pink_noise') {
+                label = 'TARGET: PINK NOISE SLOPE (-4.5 dB/OCT)';
+                strokeColor = 'rgba(251, 191, 36, 0.7)'; // Warm gold
+                db = -20.0 - 4.5 * (Math.log2(freq / 1000));
+            } else if (this.targetCurveType === 'harman') {
+                label = 'TARGET: HARMAN CURVE (WARM BASS)';
+                strokeColor = 'rgba(236, 72, 153, 0.7)'; // Pink/Rose
+                if (freq < 120) {
+                    db = -17.0 + 3.5 * (1.0 - freq / 120);
+                } else if (freq < 1500) {
+                    db = -20.5;
+                } else {
+                    db = -20.5 - 3.8 * Math.log2(freq / 1500);
+                }
+            } else if (this.targetCurveType === 'pop_master') {
+                label = 'TARGET: COMMERCIAL POP / DANCE MASTER';
+                strokeColor = 'rgba(56, 189, 248, 0.7)'; // Sky cyan
+                const sub = Math.exp(-Math.pow((Math.log10(freq) - Math.log10(60)) / 0.35, 2)) * 3.5;
+                const mud = -Math.exp(-Math.pow((Math.log10(freq) - Math.log10(300)) / 0.3, 2)) * 1.5;
+                const air = Math.exp(-Math.pow((Math.log10(freq) - Math.log10(12000)) / 0.4, 2)) * 2.5;
+                db = -22.0 - 3.2 * (Math.log2(freq / 1000)) + sub + mud + air;
+            }
+
+            const x = this.freqToX(freq);
+            const y = this.dbToY(db);
+
+            if (!started) {
+                ctx.moveTo(x, y);
+                started = true;
+            } else {
+                ctx.lineTo(x, y);
+            }
+        }
+
+        ctx.strokeStyle = strokeColor;
+        ctx.lineWidth = 1.6;
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Subtle target curve label in top right
+        ctx.font = '10px "JetBrains Mono", monospace';
+        ctx.fillStyle = strokeColor;
+        ctx.fillText(label, 14, 20);
 
         ctx.restore();
     }

@@ -5,6 +5,7 @@
  */
 
 import { WasmDSPBridge } from '../dsp/wasmBridge.js';
+import { ModularMasteringRack } from '../dsp/modularRack.js';
 
 export class AudioManager {
     constructor() {
@@ -12,24 +13,31 @@ export class AudioManager {
         window.AudioContext = window.AudioContext || window.webkitAudioContext;
         this.ctx = null;
         this.wasmBridge = null;
+        this.rack = null;
 
         // Tracks
         this.targetTrack = null;
         this.referenceTrack = null;
         this.masteredBuffer = null;
 
-        // Playback state
+        // Decoupled Playhead Positions (Target vs Reference)
         this.isPlaying = false;
         this.isLooping = true;
         this.loopStart = 0;
         this.loopEnd = 0;
-        this.currentTime = 0;
         this.startTime = 0;
-        this.pauseOffset = 0;
+        this.targetTime = 0;
+        this.targetPauseOffset = 0;
+        this.referenceTime = 0;
+        this.referencePauseOffset = 0;
 
         // Active Monitor Source: 'mastered' | 'target_dry' | 'reference'
         this.monitorSource = 'mastered';
+        this.monitorMatrix = 'stereo'; // 'stereo' | 'mono' | 'sides' | 'delta'
         this.isBypassed = false;
+        this.isAutoGainMatch = false;
+        this.currentAutoGainOffsetDb = 0;
+        this.masteredLufs = null;
 
         // Active audio graph nodes
         this.sourceNode = null;
@@ -37,6 +45,15 @@ export class AudioManager {
         this.gainTargetDry = null;
         this.gainMastered = null;
         this.gainReference = null;
+        this.gainAutoMatch = null;
+
+        // Monitor matrix nodes
+        this.matrixSplitter = null;
+        this.matrixMerger = null;
+        this.gLL = null;
+        this.gRL = null;
+        this.gLR = null;
+        this.gRR = null;
 
         // Realtime Analysers
         this.analyserTarget = null;
@@ -47,19 +64,37 @@ export class AudioManager {
         this.rafId = null;
         this.timeUpdateCallbacks = [];
         this.stateChangeCallbacks = [];
+
+        // Eagerly initialize graph so rack and routing exist immediately
+        this.initGraph();
+    }
+
+    initGraph() {
+        if (!this.ctx && typeof window !== 'undefined' && (window.AudioContext || window.webkitAudioContext)) {
+            try {
+                const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+                this.ctx = new AudioCtxClass({ latencyHint: 'interactive' });
+                this.setupGraph();
+                this.rack = new ModularMasteringRack(this.ctx);
+                this.rack.outputNode.connect(this.gainMastered);
+
+                this.wasmBridge = new WasmDSPBridge(this.ctx);
+                this.wasmBridge.initialize().catch(err => {
+                    console.warn('[AudioManager] WASM fallback mode:', err.message);
+                });
+            } catch (err) {
+                console.warn('[AudioManager] Lazy graph init deferred to user interaction:', err.message);
+            }
+        }
     }
 
     async ensureContext() {
         if (!this.ctx) {
-            this.ctx = new AudioContext({ latencyHint: 'interactive' });
-            this.setupGraph();
-            this.wasmBridge = new WasmDSPBridge(this.ctx);
-            await this.wasmBridge.initialize();
-            this.connectWasmNode();
+            this.initGraph();
         }
 
-        if (this.ctx.state === 'suspended') {
-            await this.ctx.resume();
+        if (this.ctx && this.ctx.state === 'suspended') {
+            await this.ctx.resume().catch(() => {});
         }
     }
 
@@ -74,6 +109,13 @@ export class AudioManager {
         this.gainMastered = this.ctx.createGain();
         this.gainReference = this.ctx.createGain();
 
+        // Auto-Gain Match Leveling Node
+        this.gainAutoMatch = this.ctx.createGain();
+        this.gainAutoMatch.gain.value = 1.0;
+
+        // Sub-bus summing node
+        const busSum = this.ctx.createGain();
+
         // Realtime Spectrum Analysers
         this.analyserTarget = this.ctx.createAnalyser();
         this.analyserTarget.fftSize = 2048;
@@ -87,15 +129,60 @@ export class AudioManager {
         this.analyserMastered.fftSize = 2048;
         this.analyserMastered.smoothingTimeConstant = 0.8;
 
-        // Initial Routing: Mastered connects to analyser & master out
+        // Sub-busses connect through their analysers into the bus sum
         this.gainMastered.connect(this.analyserMastered);
-        this.analyserMastered.connect(this.gainMaster);
+        this.analyserMastered.connect(busSum);
 
         this.gainTargetDry.connect(this.analyserTarget);
-        this.analyserTarget.connect(this.gainMaster);
+        this.analyserTarget.connect(busSum);
 
         this.gainReference.connect(this.analyserReference);
-        this.analyserReference.connect(this.gainMaster);
+        this.analyserReference.connect(busSum);
+
+        // Bus sum routes to Auto-Gain Match leveling node
+        busSum.connect(this.gainAutoMatch);
+
+        // Professional Monitor Matrix (Stereo, Mono Mid, Sides L-R)
+        this.matrixSplitter = this.ctx.createChannelSplitter(2);
+        this.matrixMerger = this.ctx.createChannelMerger(2);
+
+        this.gLL = this.ctx.createGain();
+        this.gRL = this.ctx.createGain();
+        this.gLR = this.ctx.createGain();
+        this.gRR = this.ctx.createGain();
+
+        // Default: 1:1 Stereo
+        this.gLL.gain.value = 1.0;
+        this.gRL.gain.value = 0.0;
+        this.gLR.gain.value = 0.0;
+        this.gRR.gain.value = 1.0;
+
+        this.gainAutoMatch.connect(this.matrixSplitter);
+
+        // Left output sum = (L * gLL) + (R * gRL)
+        this.matrixSplitter.connect(this.gLL, 0);
+        this.matrixSplitter.connect(this.gRL, 1);
+        this.gLL.connect(this.matrixMerger, 0, 0);
+        this.gRL.connect(this.matrixMerger, 0, 0);
+
+        // Right output sum = (L * gLR) + (R * gRR)
+        this.matrixSplitter.connect(this.gLR, 0);
+        this.matrixSplitter.connect(this.gRR, 1);
+        this.gLR.connect(this.matrixMerger, 0, 1);
+        this.gRR.connect(this.matrixMerger, 0, 1);
+
+        this.matrixMerger.connect(this.gainMaster);
+
+        // Stereo Splitter & Analysers for Goniometer / Phase Vectorscope
+        this.splitter = this.ctx.createChannelSplitter(2);
+        this.analyserL = this.ctx.createAnalyser();
+        this.analyserL.fftSize = 1024;
+        this.analyserR = this.ctx.createAnalyser();
+        this.analyserR.fftSize = 1024;
+
+        this.gainMaster.connect(this.splitter);
+        this.splitter.connect(this.analyserL, 0);
+        this.splitter.connect(this.analyserR, 1);
 
         this.updateBusGains();
     }
@@ -147,13 +234,24 @@ export class AudioManager {
         this.updateBusGains();
 
         // Only reload buffer playback if transitioning to/from the Reference track!
-        // Switching between 'mastered' and 'target_dry' uses the exact same target buffer and crossfades seamlessly in real-time.
         const needsBufferSwap = (prevSource === 'reference' && source !== 'reference') ||
                                 (prevSource !== 'reference' && source === 'reference');
 
         if (this.isPlaying && needsBufferSwap) {
+            // Save active timestamp to the outgoing deck
             const curTime = this.getCurrentTime();
-            this.startBufferPlayback(curTime);
+            if (prevSource === 'reference') {
+                this.referencePauseOffset = curTime;
+                this.referenceTime = curTime;
+            } else {
+                this.targetPauseOffset = curTime;
+                this.targetTime = curTime;
+            }
+
+            // Start incoming deck from ITS OWN independent cue point!
+            const newOffset = (source === 'reference') ? this.referencePauseOffset : this.targetPauseOffset;
+            this.startBufferPlayback(newOffset);
+            this.startTime = this.ctx.currentTime - newOffset;
         }
         this.notifyStateChange();
     }
@@ -164,13 +262,101 @@ export class AudioManager {
         const rampTime = 0.02; // 20ms quick crossfade to avoid pops
         const now = this.ctx ? this.ctx.currentTime : 0;
 
-        const isRef = this.monitorSource === 'reference';
-        const isDry = this.monitorSource === 'target_dry' || this.isBypassed;
-        const isMaster = this.monitorSource === 'mastered' && !this.isBypassed;
+        const isDelta = this.monitorMatrix === 'delta';
+        const isRef = !isDelta && this.monitorSource === 'reference';
+        const isDry = !isDelta && (this.monitorSource === 'target_dry' || this.isBypassed);
+        const isMaster = !isDelta && (this.monitorSource === 'mastered' && !this.isBypassed);
 
-        this.gainMastered.gain.setTargetAtTime(isMaster ? 1.0 : 0.0, now, rampTime);
-        this.gainTargetDry.gain.setTargetAtTime(isDry ? 1.0 : 0.0, now, rampTime);
-        this.gainReference.gain.setTargetAtTime(isRef ? 1.0 : 0.0, now, rampTime);
+        if (isDelta) {
+            // Delta Listen Mode: Mastered (+1.0) summed with Dry Target (-1.0 phase inverted)
+            // Signal cancellation reveals purely the EQ boosts/cuts, dynamics, and saturation!
+            this.gainMastered.gain.setTargetAtTime(1.0, now, rampTime);
+            this.gainTargetDry.gain.setTargetAtTime(-1.0, now, rampTime);
+            this.gainReference.gain.setTargetAtTime(0.0, now, rampTime);
+        } else {
+            this.gainMastered.gain.setTargetAtTime(isMaster ? 1.0 : 0.0, now, rampTime);
+            this.gainTargetDry.gain.setTargetAtTime(isDry ? 1.0 : 0.0, now, rampTime);
+            this.gainReference.gain.setTargetAtTime(isRef ? 1.0 : 0.0, now, rampTime);
+        }
+
+        // Auto-Gain Loudness Match Calculation (Defeats the Fletcher-Munson Loudness Bias)
+        if (this.isAutoGainMatch && this.gainAutoMatch) {
+            let offsetDb = 0;
+            const targetLufs = this.targetTrack?.lufs;
+            const refLufs = this.referenceTrack?.lufs;
+            const masterLufs = this.masteredLufs || (targetLufs ? targetLufs + 2.5 : null);
+
+            if (isRef && targetLufs != null && refLufs != null) {
+                // Attenuate or boost reference to match target track loudness
+                offsetDb = targetLufs - refLufs;
+            } else if (isMaster && targetLufs != null && masterLufs != null) {
+                // Attenuate or boost mastered to match target track loudness
+                offsetDb = targetLufs - masterLufs;
+            }
+
+            // Clamp offset within professional safety boundary (-20 dB to +12 dB)
+            const safeOffsetDb = Math.max(-20, Math.min(12, offsetDb));
+            const linearMultiplier = Math.pow(10, safeOffsetDb / 20);
+            this.gainAutoMatch.gain.setTargetAtTime(linearMultiplier, now, rampTime);
+            this.currentAutoGainOffsetDb = safeOffsetDb;
+        } else if (this.gainAutoMatch) {
+            this.gainAutoMatch.gain.setTargetAtTime(1.0, now, rampTime);
+            this.currentAutoGainOffsetDb = 0;
+        }
+    }
+
+    /**
+     * Professional Studio Monitor Matrix Switcher
+     * @param {'stereo' | 'mono' | 'sides' | 'delta'} mode 
+     */
+    setMonitorMatrix(mode) {
+        this.monitorMatrix = mode;
+        const rampTime = 0.02;
+        const now = this.ctx ? this.ctx.currentTime : 0;
+
+        if (!this.gLL || !this.gRL || !this.gLR || !this.gRR) {
+            this.notifyStateChange();
+            return;
+        }
+
+        if (mode === 'mono') {
+            // Mono: (L + R) * 0.5 to both Left and Right channels
+            this.gLL.gain.setTargetAtTime(0.5, now, rampTime);
+            this.gRL.gain.setTargetAtTime(0.5, now, rampTime);
+            this.gLR.gain.setTargetAtTime(0.5, now, rampTime);
+            this.gRR.gain.setTargetAtTime(0.5, now, rampTime);
+        } else if (mode === 'sides') {
+            // Sides Only: (L - R) * 0.5 to Left, and (R - L) * 0.5 to Right
+            this.gLL.gain.setTargetAtTime(0.5, now, rampTime);
+            this.gRL.gain.setTargetAtTime(-0.5, now, rampTime);
+            this.gLR.gain.setTargetAtTime(-0.5, now, rampTime);
+            this.gRR.gain.setTargetAtTime(0.5, now, rampTime);
+        } else {
+            // Normal Stereo or Delta: 1:1 discrete channel mapping
+            this.gLL.gain.setTargetAtTime(1.0, now, rampTime);
+            this.gRL.gain.setTargetAtTime(0.0, now, rampTime);
+            this.gLR.gain.setTargetAtTime(0.0, now, rampTime);
+            this.gRR.gain.setTargetAtTime(1.0, now, rampTime);
+        }
+
+        this.updateBusGains();
+        this.notifyStateChange();
+    }
+
+    /**
+     * Toggle True-Loudness Match Auto-Gain (A/B Auditioning)
+     * @param {boolean} enabled 
+     */
+    setAutoGainMatch(enabled) {
+        this.isAutoGainMatch = !!enabled;
+        this.updateBusGains();
+        this.notifyStateChange();
+    }
+
+    setMasteredLufs(lufs) {
+        this.masteredLufs = lufs;
+        this.updateBusGains();
+        this.notifyStateChange();
     }
 
     setBypass(bypass) {
@@ -203,16 +389,24 @@ export class AudioManager {
         await this.ensureContext();
         if (this.isPlaying) return;
 
-        this.startBufferPlayback(this.pauseOffset);
+        const offset = (this.monitorSource === 'reference') ? this.referencePauseOffset : this.targetPauseOffset;
+        this.startBufferPlayback(offset);
         this.isPlaying = true;
-        this.startTime = this.ctx.currentTime - this.pauseOffset;
+        this.startTime = this.ctx.currentTime - offset;
         this.startTimeLoop();
         this.notifyStateChange();
     }
 
     pause() {
         if (!this.isPlaying) return;
-        this.pauseOffset = this.getCurrentTime();
+        const cur = this.getCurrentTime();
+        if (this.monitorSource === 'reference') {
+            this.referencePauseOffset = cur;
+            this.referenceTime = cur;
+        } else {
+            this.targetPauseOffset = cur;
+            this.targetTime = cur;
+        }
         this.stopSource();
         this.isPlaying = false;
         this.stopTimeLoop();
@@ -221,40 +415,83 @@ export class AudioManager {
 
     stop() {
         this.stopSource();
-        this.pauseOffset = 0;
-        this.currentTime = 0;
+        this.targetPauseOffset = 0;
+        this.targetTime = 0;
         this.isPlaying = false;
         this.stopTimeLoop();
-        this.notifyTimeUpdate(0);
+        this.notifyTimeUpdate({
+            time: 0,
+            activeTrack: this.monitorSource,
+            targetTime: 0,
+            refTime: this.referenceTime
+        });
         this.notifyStateChange();
     }
 
-    seek(timeSeconds) {
-        const duration = this.getActiveDuration();
-        const clamped = Math.max(0, Math.min(duration, timeSeconds));
-        this.pauseOffset = clamped;
-        this.currentTime = clamped;
+    seekTarget(timeSeconds) {
+        const maxDur = this.targetTrack ? this.targetTrack.duration : 0;
+        const clamped = Math.max(0, Math.min(maxDur, timeSeconds));
+        this.targetPauseOffset = clamped;
+        this.targetTime = clamped;
 
-        if (this.isPlaying) {
+        if (this.isPlaying && this.monitorSource !== 'reference') {
             this.startBufferPlayback(clamped);
             this.startTime = this.ctx.currentTime - clamped;
         }
 
-        this.notifyTimeUpdate(clamped);
+        this.notifyTimeUpdate(this.getTimeUpdatePayload());
+    }
+
+    seekReference(timeSeconds) {
+        const maxDur = this.referenceTrack ? this.referenceTrack.duration : 0;
+        const clamped = Math.max(0, Math.min(maxDur, timeSeconds));
+        this.referencePauseOffset = clamped;
+        this.referenceTime = clamped;
+
+        if (this.isPlaying && this.monitorSource === 'reference') {
+            this.startBufferPlayback(clamped);
+            this.startTime = this.ctx.currentTime - clamped;
+        }
+
+        this.notifyTimeUpdate(this.getTimeUpdatePayload());
+    }
+
+    seek(timeSeconds) {
+        if (this.monitorSource === 'reference') {
+            this.seekReference(timeSeconds);
+        } else {
+            this.seekTarget(timeSeconds);
+        }
     }
 
     getCurrentTime() {
-        if (!this.isPlaying || !this.ctx) return this.pauseOffset;
+        if (!this.isPlaying || !this.ctx) {
+            return (this.monitorSource === 'reference') ? this.referencePauseOffset : this.targetPauseOffset;
+        }
         const elapsed = this.ctx.currentTime - this.startTime;
         const duration = this.getActiveDuration();
 
-        if (this.isLooping && this.loopEnd > this.loopStart && elapsed >= this.loopEnd) {
-            const loopLen = this.loopEnd - this.loopStart;
-            const over = elapsed - this.loopStart;
-            return this.loopStart + (over % loopLen);
+        if (this.isLooping && duration > 0 && elapsed >= duration) {
+            return elapsed % duration;
         }
 
         return Math.min(duration, elapsed);
+    }
+
+    getTimeUpdatePayload() {
+        const isRef = this.monitorSource === 'reference';
+        const cur = this.getCurrentTime();
+        if (isRef) {
+            this.referenceTime = cur;
+        } else {
+            this.targetTime = cur;
+        }
+        return {
+            time: cur,
+            activeTrack: isRef ? 'reference' : 'target',
+            targetTime: this.targetTime,
+            refTime: this.referenceTime
+        };
     }
 
     getActiveDuration() {
@@ -299,13 +536,12 @@ export class AudioManager {
             this.sourceNode.connect(this.gainReference);
         } else {
             // Target audio routes to BOTH:
-            // 1. Target Dry bus (for dry A/B comparison)
+            // 1. Target Dry bus (for instantaneous dry A/B comparison)
             this.sourceNode.connect(this.gainTargetDry);
 
-            // 2. Wasm Worklet DSP node (for Mastered Target)
-            if (this.wasmBridge && this.wasmBridge.getWorkletNode()) {
-                this.connectWasmNode();
-                this.sourceNode.connect(this.wasmBridge.getWorkletNode());
+            // 2. Modular Mastering Rack (Real-Time DSP Hardware Graph)
+            if (this.rack && this.rack.inputNode) {
+                this.sourceNode.connect(this.rack.inputNode);
             }
         }
 
@@ -369,6 +605,9 @@ export class AudioManager {
             isLooping: this.isLooping,
             isBypassed: this.isBypassed,
             monitorSource: this.monitorSource,
+            monitorMatrix: this.monitorMatrix,
+            isAutoGainMatch: this.isAutoGainMatch,
+            autoGainOffsetDb: this.currentAutoGainOffsetDb,
             currentTime: this.currentTime,
             duration: this.getActiveDuration(),
             hasTarget: !!this.targetTrack,
@@ -386,5 +625,15 @@ export class AudioManager {
         const array = new Uint8Array(analyser.frequencyBinCount);
         analyser.getByteFrequencyData(array);
         return array;
+    }
+
+    // Get stereo time-domain data for vectorscope / goniometer
+    getStereoTimeDomainData() {
+        if (!this.analyserL || !this.analyserR) return null;
+        const left = new Float32Array(this.analyserL.fftSize);
+        const right = new Float32Array(this.analyserR.fftSize);
+        this.analyserL.getFloatTimeDomainData(left);
+        this.analyserR.getFloatTimeDomainData(right);
+        return { left, right };
     }
 }

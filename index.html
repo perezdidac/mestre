@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="./src/styles/main.css">
     <link rel="stylesheet" href="./src/styles/components.css">
     <link rel="stylesheet" href="./src/styles/visualizer.css">
+    <link rel="stylesheet" href="./src/styles/rack.css">
 </head>
 <body>
     <div class="app-container">
@@ -21,20 +22,51 @@
                     </svg>
                 </div>
                 <div class="logo-text">
-                    <h1>AURA MASTER</h1>
-                    <span class="subtitle">Reference Match DSP Suite</span>
+                    <h1>AURA MASTER <span class="console-series-tag">M-100 CONSOLE</span></h1>
+                    <span class="subtitle">Autonomous Reference Match DSP Architecture</span>
                 </div>
             </div>
 
             <div class="header-badges">
+                <!-- Master Preset Profile Selector -->
+                <div class="preset-dropdown-container">
+                    <span class="header-control-tag">PROFILE</span>
+                    <select class="styled-select preset-select" id="select-master-preset" title="Load Mastering Preset Profile">
+                        <optgroup label="Streaming & Commercial Standards">
+                            <option value="streaming_standard" selected>Streaming Standard (-14 LUFS)</option>
+                            <option value="edm_club_punch">Club & EDM Maximum Impact (-8 LUFS)</option>
+                            <option value="hiphop_trap_warmth">Modern Hip-Hop & 808 Trap</option>
+                            <option value="vintage_analog_vinyl">Warm Vintage Vinyl & Tape</option>
+                            <option value="acoustic_vocal_clarity">Acoustic & Vocal Intimacy</option>
+                            <option value="heavy_rock_punch">Rock & Metal Wall-of-Sound</option>
+                        </optgroup>
+                        <optgroup label="Custom User Presets" id="optgroup-user-presets">
+                        </optgroup>
+                    </select>
+                    <button class="btn btn-secondary btn-icon-preset" id="btn-save-custom-preset" title="Save current rack settings as custom preset">💾</button>
+                </div>
+
+                <!-- Master Pre-Flight Quality Inspector Button -->
+                <button class="btn btn-secondary btn-quality-inspector" id="btn-open-quality-inspector" title="Open Master Pre-Flight Quality Inspector">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <span>PRE-FLIGHT CHECK</span>
+                </button>
+
+                <button class="btn btn-secondary btn-theme-toggle" id="btn-theme-toggle" title="Toggle Bright Studio / Dark Console">
+                    <span id="theme-toggle-icon">🌙</span>
+                    <span id="theme-toggle-label">Dark Console</span>
+                </button>
                 <div class="status-badge" id="badge-wasm-status">
                     <span class="status-dot"></span>
-                    <span id="label-wasm-status">WASM CORE 64-BIT</span>
+                    <span id="label-wasm-status">HYBRID DSP RACK</span>
                 </div>
                 <div class="status-badge" id="badge-sr-status">
-                    <span id="label-sr-status">48 kHz | 32-BANDS</span>
+                    <span id="label-sr-status">48 kHz | REALTIME</span>
                 </div>
-                <button class="btn btn-secondary btn-demo" id="btn-load-demo" title="Load synthetic synth bass & chords audio demo">
+                <button class="btn btn-secondary btn-demo" id="btn-load-demo" title="Load demo tracks">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polygon points="5 3 19 12 5 21 5 3"></polygon>
                     </svg>
@@ -129,44 +161,132 @@
 
         <!-- Phase 2 & Visualizers: Real-Time Spectrum & Precision Meter Bridge -->
         <section class="visualizer-section">
-            <!-- Left Column: Spectrum RTA & EQ Curves -->
+            <!-- Left Column: Mastering Scope Hub & EQ Curves -->
             <div style="display: flex; flex-direction: column; gap: 20px;">
-                <!-- Spectrum Analyzer Card -->
-                <div class="spectrum-card">
-                    <div class="spectrum-header">
-                        <span class="section-title">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M2 10v3M6 6v11M10 3v18M14 8v7M18 5v13M22 10v3"/>
-                            </svg>
-                            FFT Spectrum & Match Difference
-                        </span>
-                        <div class="spectrum-legend">
-                            <div class="legend-item"><span class="legend-dot cyan"></span> Target</div>
-                            <div class="legend-item"><span class="legend-dot amber"></span> Reference</div>
-                            <div class="legend-item"><span class="legend-dot emerald"></span> Match EQ</div>
-                            <div class="legend-item"><span class="legend-dot purple"></span> Master RTA</div>
-                        </div>
+                <!-- Mastering Scope Hub Navigation -->
+                <div class="scope-hub-nav">
+                    <div class="scope-tabs">
+                        <button class="scope-tab active" data-scope="spectrum" id="tab-scope-spectrum">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 10v3M6 6v11M10 3v18M14 8v7M18 5v13M22 10v3"/></svg>
+                            FFT Spectrum RTA
+                        </button>
+                        <button class="scope-tab" data-scope="vectorscope" id="tab-scope-vectorscope">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 14.14 14.14M19.07 4.93 4.93 19.07"/></svg>
+                            Stereo Goniometer & Phase
+                        </button>
+                        <button class="scope-tab" data-scope="loudness" id="tab-scope-loudness">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+                            Loudness History Radar
+                        </button>
                     </div>
-                    <div class="spectrum-canvas-container">
-                        <canvas class="spectrum-canvas" id="canvas-spectrum"></canvas>
+                    <div class="scope-actions">
+                        <button class="btn-scope-split" id="btn-scope-split" title="Toggle Split-Screen Dual Scope Mode">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="3" x2="12" y2="21"/></svg>
+                            Dual Scope View
+                        </button>
                     </div>
                 </div>
 
-                <!-- Interactive EQ Curve Plot Card -->
-                <div class="eq-plot-card">
-                    <div class="spectrum-header">
-                        <span class="section-title">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="6" cy="12" r="3"></circle>
-                                <circle cx="18" cy="8" r="3"></circle>
-                                <path d="M9 12h6"></path>
-                            </svg>
-                            32-Band Parametric Filter Nodes (Interactive)
-                        </span>
-                        <span style="font-size: 11px; color: var(--text-muted);">Drag nodes to fine-tune individual bands</span>
+                <!-- Scope Displays Container -->
+                <div class="scope-displays-container" id="scope-displays-container">
+                    <!-- Spectrum Analyzer Card -->
+                    <div class="spectrum-card scope-view" id="scope-view-spectrum">
+                        <div class="spectrum-header">
+                            <span class="section-title">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M2 10v3M6 6v11M10 3v18M14 8v7M18 5v13M22 10v3"/>
+                                </svg>
+                                FFT Spectrum & Match Difference
+                            </span>
+                            <div class="spectrum-controls-row">
+                                <div class="target-curve-picker">
+                                    <label for="select-target-curve" class="curve-picker-label">TARGET CURVE:</label>
+                                    <select class="styled-select target-curve-select" id="select-target-curve">
+                                        <option value="pink_noise" selected>Pink Noise (-4.5 dB/oct)</option>
+                                        <option value="harman">Harman Curve (Warm Sub)</option>
+                                        <option value="pop_master">Commercial Pop / EDM</option>
+                                        <option value="none">None (Off)</option>
+                                    </select>
+                                </div>
+                                <div class="spectrum-legend">
+                                    <div class="legend-item"><span class="legend-dot cyan"></span> Target</div>
+                                    <div class="legend-item"><span class="legend-dot amber"></span> Reference</div>
+                                    <div class="legend-item"><span class="legend-dot emerald"></span> Match EQ</div>
+                                    <div class="legend-item"><span class="legend-dot purple"></span> Master RTA</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="spectrum-canvas-container">
+                            <canvas class="spectrum-canvas" id="canvas-spectrum"></canvas>
+                        </div>
                     </div>
-                    <div class="eq-plot-canvas-container">
+
+                    <!-- Stereo Goniometer & Phase Vectorscope Card -->
+                    <div class="vectorscope-card scope-view" id="scope-view-vectorscope" style="display: none;">
+                        <div class="spectrum-header">
+                            <span class="section-title">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <path d="m4.93 4.93 14.14 14.14M19.07 4.93 4.93 19.07"/>
+                                </svg>
+                                Stereo Goniometer & Lissajous Phase Scope
+                            </span>
+                            <div class="spectrum-legend">
+                                <div class="legend-item"><span class="legend-dot cyan"></span> Mid/Side Polar Field</div>
+                                <div class="legend-item"><span class="legend-dot emerald"></span> In-Phase Safe</div>
+                            </div>
+                        </div>
+                        <div class="vectorscope-canvas-container">
+                            <canvas class="vectorscope-canvas" id="canvas-vectorscope"></canvas>
+                        </div>
+                        <div id="vectorscope-telemetry-container"></div>
+                    </div>
+
+                    <!-- Rolling Loudness History Radar Card -->
+                    <div class="loudness-radar-card scope-view" id="scope-view-loudness" style="display: none;">
+                        <div class="spectrum-header">
+                            <span class="section-title">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/>
+                                </svg>
+                                Rolling Loudness History (LUFS) & Dynamic Contour
+                            </span>
+                            <div class="spectrum-legend">
+                                <div class="legend-item"><span class="legend-dot cyan"></span> Short-Term LUFS</div>
+                                <div class="legend-item"><span class="legend-dot amber"></span> Streaming Target (-14 LUFS)</div>
+                            </div>
+                        </div>
+                        <div class="loudness-canvas-container">
+                            <canvas class="loudness-canvas" id="canvas-loudness-radar"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pro Studio Parametric EQ (FabFilter Pro-Q Style) -->
+                <div class="eq-plot-card pro-eq-card">
+                    <div class="spectrum-header pro-eq-header">
+                        <div class="pro-eq-title-row">
+                            <span class="section-title">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M3 12h3l3-9 6 18 3-9h3"/>
+                                </svg>
+                                Pro-Q Mastering Equalizer
+                            </span>
+                            <span class="pro-eq-hint">Drag nodes • Wheel adjusts Q • Click for HUD • Double-click adds band</span>
+                        </div>
+                        <div class="pro-eq-presets" id="pro-eq-presets">
+                            <button class="btn-eq-preset" data-preset="flat">Flat Reset</button>
+                            <button class="btn-eq-preset" data-preset="air">Air Sheen (+12k)</button>
+                            <button class="btn-eq-preset" data-preset="vocal">Vocal Presence</button>
+                            <button class="btn-eq-preset" data-preset="punch">Bass Punch</button>
+                            <button class="btn-eq-preset" data-preset="demud">De-Mud (-300Hz)</button>
+                            <button class="btn-eq-preset" data-preset="smile">Loudness Smile</button>
+                        </div>
+                    </div>
+                    <div class="eq-plot-canvas-container" id="eq-canvas-container">
                         <canvas class="eq-plot-canvas" id="canvas-eq-plot"></canvas>
+                        <!-- Floating Pro-Q Band HUD Bar -->
+                        <div class="pro-q-hud" id="pro-q-hud" style="display: none;"></div>
                     </div>
                 </div>
             </div>
@@ -177,86 +297,9 @@
             </div>
         </section>
 
-        <!-- Phase 3 & 4: Mastering Parameter Controls Grid -->
-        <section class="master-controls-section">
-            <div class="section-header">
-                <span class="section-title">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="4" y1="21" x2="4" y2="14"></line>
-                        <line x1="4" y1="10" x2="4" y2="3"></line>
-                        <line x1="12" y1="21" x2="12" y2="12"></line>
-                        <line x1="12" y1="8" x2="12" y2="3"></line>
-                        <line x1="20" y1="21" x2="20" y2="16"></line>
-                        <line x1="20" y1="12" x2="20" y2="3"></line>
-                        <line x1="1" y1="14" x2="7" y2="14"></line>
-                        <line x1="9" y1="8" x2="15" y2="8"></line>
-                        <line x1="17" y1="16" x2="23" y2="16"></line>
-                    </svg>
-                    Mastering DSP Parameters & Dynamics Mapping
-                </span>
-                <div class="presets-row" style="display: flex; gap: 8px; align-items: center;">
-                    <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); letter-spacing: 0.05em;">TARGET PRESETS:</span>
-                    <button class="btn btn-secondary preset-btn active" id="btn-preset-streaming" style="font-size: 11px; padding: 4px 10px;">Streaming (-14)</button>
-                    <button class="btn btn-secondary preset-btn" id="btn-preset-club" style="font-size: 11px; padding: 4px 10px;">Club / EDM (-9)</button>
-                    <button class="btn btn-secondary preset-btn" id="btn-preset-audiophile" style="font-size: 11px; padding: 4px 10px;">Audiophile (-16)</button>
-                </div>
-            </div>
-
-            <div class="controls-row">
-                <!-- Match Amount -->
-                <div class="control-group match-amount">
-                    <div class="control-label-row">
-                        <span class="control-name">Match Amount</span>
-                        <span class="control-val-badge" id="val-match-amount">100%</span>
-                    </div>
-                    <input type="range" class="styled-slider" id="slider-match-amount" min="0" max="150" value="100">
-                </div>
-
-                <!-- EQ Smoothing -->
-                <div class="control-group">
-                    <div class="control-label-row">
-                        <span class="control-name">Curve Smoothing</span>
-                        <span class="control-val-badge" id="val-smoothing">50%</span>
-                    </div>
-                    <input type="range" class="styled-slider" id="slider-smoothing" min="0" max="100" value="50">
-                </div>
-
-                <!-- Input Gain / Drive -->
-                <div class="control-group">
-                    <div class="control-label-row">
-                        <span class="control-name">Input Drive</span>
-                        <span class="control-val-badge" id="val-input-gain">0.0 dB</span>
-                    </div>
-                    <input type="range" class="styled-slider" id="slider-input-gain" min="-12" max="12" step="0.5" value="0">
-                </div>
-
-                <!-- Compressor Threshold -->
-                <div class="control-group">
-                    <div class="control-label-row">
-                        <span class="control-name">Comp Threshold</span>
-                        <span class="control-val-badge" id="val-comp-thresh">-16.0 dB</span>
-                    </div>
-                    <input type="range" class="styled-slider" id="slider-comp-thresh" min="-36" max="0" step="0.5" value="-16">
-                </div>
-
-                <!-- Compressor Ratio -->
-                <div class="control-group">
-                    <div class="control-label-row">
-                        <span class="control-name">Comp Ratio</span>
-                        <span class="control-val-badge" id="val-comp-ratio">2.5:1</span>
-                    </div>
-                    <input type="range" class="styled-slider" id="slider-comp-ratio" min="1" max="8" step="0.1" value="2.5">
-                </div>
-
-                <!-- Limiter Ceiling -->
-                <div class="control-group">
-                    <div class="control-label-row">
-                        <span class="control-name">Limiter Ceiling</span>
-                        <span class="control-val-badge" id="val-limiter-ceil">-0.2 dB</span>
-                    </div>
-                    <input type="range" class="styled-slider" id="slider-limiter-ceil" min="-2.0" max="0.0" step="0.1" value="-0.2">
-                </div>
-            </div>
+        <!-- Modular Mastering Chain & Processor Rack -->
+        <section class="master-rack-section" id="modular-rack-container">
+            <!-- Injected via ModularRackView -->
         </section>
     </div>
 
@@ -294,17 +337,36 @@
             <div class="timecode-box" id="timecode-display">00:00.00 / 00:00.00</div>
         </div>
 
-        <!-- Transport Center: A/B Monitoring Switcher -->
+        <!-- Transport Center: A/B Monitoring Switcher, Auto-Gain Match, and Monitor Matrix -->
         <div class="transport-center">
+            <!-- A/B Source Matrix (Mastered / Target / Reference) -->
             <div class="mon-pill-group">
                 <button class="mon-pill active" id="btn-mon-mastered" title="Listen to Mastered Target Track (Wasm DSP)">MASTERED</button>
                 <button class="mon-pill" id="btn-mon-target" title="Listen to Dry Original Target Track (Bypassed)">TARGET (DRY)</button>
                 <button class="mon-pill" id="btn-mon-ref" title="Listen to Commercial Reference Benchmark">REFERENCE</button>
             </div>
+
+            <!-- Auto-Gain Match (Loudness-Matched A/B Auditioning) -->
+            <button class="btn btn-autogain-match" id="btn-autogain-match" title="Auto-Match Loudness to defeat Fletcher-Munson volume bias during A/B switching">
+                <span class="led-dot" id="led-autogain"></span>
+                <span>AUTO-GAIN</span>
+                <span class="gain-offset-badge" id="badge-autogain-offset" style="display:none;">0.0 dB</span>
+            </button>
+
+            <!-- Channel Listening Matrix: Stereo, Mono Mid, Sides, Delta Listen -->
+            <div class="matrix-pill-group" title="Monitoring Matrix: Stereo, Summed Mono, Sides Only, Delta Listen">
+                <button class="matrix-pill active" id="btn-matrix-stereo" data-matrix="stereo" title="Full Stereo Monitoring">STEREO</button>
+                <button class="matrix-pill" id="btn-matrix-mono" data-matrix="mono" title="Summed Mono (L+R) to check mono compatibility">MONO</button>
+                <button class="matrix-pill" id="btn-matrix-sides" data-matrix="sides" title="Sides Only (L-R) to audition stereo reverb & width">SIDES</button>
+                <button class="matrix-pill" id="btn-matrix-delta" data-matrix="delta" title="Delta Listen: Audition purely the mastering difference (Mastered - Dry)">DELTA</button>
+            </div>
         </div>
 
-        <!-- Transport Right: Export Action -->
+        <!-- Transport Right: Shortcuts & Export Action -->
         <div class="transport-right">
+            <button class="btn btn-secondary" id="btn-open-shortcuts" title="Keyboard Shortcuts Cheat Sheet (Press ?)">
+                ⌨️ <span class="hotkeys-btn-label">Hotkeys</span>
+            </button>
             <button class="btn btn-secondary" id="btn-export-master" style="background: linear-gradient(135deg, #0ea5e9, #2563eb); color: #fff; border: none; box-shadow: 0 0 20px rgba(37, 99, 235, 0.4);">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -356,6 +418,33 @@
                 <button class="btn" id="btn-confirm-export" style="background: var(--color-target); color: #020617;">
                     Render & Download
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Keyboard Shortcuts Modal Dialog -->
+    <div class="modal-backdrop" id="shortcuts-modal">
+        <div class="modal-dialog shortcuts-dialog">
+            <div class="modal-header">
+                <h3 class="modal-title">Mastering Console Hotkeys</h3>
+                <button class="btn btn-secondary" id="btn-close-shortcuts" style="padding: 4px 8px;">✕</button>
+            </div>
+            <div class="modal-body shortcuts-grid">
+                <div class="shortcut-item"><kbd>Space</kbd> <span>Play / Pause</span></div>
+                <div class="shortcut-item"><kbd>B</kbd> <span>Toggle Master Bypass</span></div>
+                <div class="shortcut-item"><kbd>L</kbd> <span>Toggle Playback Loop</span></div>
+                <div class="shortcut-item"><kbd>1</kbd> <span>Audition Mastered Target</span></div>
+                <div class="shortcut-item"><kbd>2</kbd> <span>Audition Target Dry Mix</span></div>
+                <div class="shortcut-item"><kbd>3</kbd> <span>Audition Reference Track</span></div>
+                <div class="shortcut-item"><kbd>M</kbd> <span>Toggle Summed Mono Matrix</span></div>
+                <div class="shortcut-item"><kbd>S</kbd> <span>Toggle Sides (L-R) Matrix</span></div>
+                <div class="shortcut-item"><kbd>D</kbd> <span>Toggle Delta Difference Listen</span></div>
+                <div class="shortcut-item"><kbd>A</kbd> <span>Toggle Auto-Gain Match</span></div>
+                <div class="shortcut-item"><kbd>Q</kbd> <span>Open Pre-Flight Quality Check</span></div>
+                <div class="shortcut-item"><kbd>Esc</kbd> <span>Close Any Modal Dialog</span></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="btn-dismiss-shortcuts">Close</button>
             </div>
         </div>
     </div>

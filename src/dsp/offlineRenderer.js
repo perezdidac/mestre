@@ -94,6 +94,56 @@ export class OfflineMasteringRenderer {
             const lookaheadSamples = Math.max(1, Math.min(1000, Math.floor((limLookaheadMs * 0.001) * sampleRate)));
 
             wasmExports.dsp_set_limiter(ceilLin, limRelCoeff, lookaheadSamples, limSoftClip ? 1 : 0);
+        } else {
+            // High-precision Native Web Audio Offline Rendering Fallback
+            if (onProgress) onProgress(0.2, 'Rendering via Native DSP Audio Graph...');
+            const offlineCtx = new OfflineAudioContext(numChannels, length, sampleRate);
+            const source = offlineCtx.createBufferSource();
+            source.buffer = targetAudioBuffer;
+
+            const inGain = offlineCtx.createGain();
+            inGain.gain.value = inputGainLin;
+            source.connect(inGain);
+
+            let lastNode = inGain;
+            for (const b of biquadFilters) {
+                if (b.enabled && Math.abs(b.gainDb || 0) > 0.01) {
+                    const filter = offlineCtx.createBiquadFilter();
+                    filter.type = b.type || 'peaking';
+                    filter.frequency.value = b.freq;
+                    filter.gain.value = (b.gainDb || 0) * matchAmount;
+                    filter.Q.value = b.q || 1.4;
+                    lastNode.connect(filter);
+                    lastNode = filter;
+                }
+            }
+
+            const comp = offlineCtx.createDynamicsCompressor();
+            comp.threshold.value = masterParams.compThresholdDb !== undefined ? masterParams.compThresholdDb : -16.0;
+            comp.ratio.value = masterParams.compRatio !== undefined ? masterParams.compRatio : 2.5;
+            comp.attack.value = (masterParams.compAttackMs !== undefined ? masterParams.compAttackMs : 25.0) / 1000.0;
+            comp.release.value = (masterParams.compReleaseMs !== undefined ? masterParams.compReleaseMs : 150.0) / 1000.0;
+            lastNode.connect(comp);
+            lastNode = comp;
+
+            const outGain = offlineCtx.createGain();
+            const ceil = masterParams.limiterCeilingDb !== undefined ? masterParams.limiterCeilingDb : -0.2;
+            outGain.gain.value = Math.pow(10.0, ceil / 20.0);
+            lastNode.connect(outGain);
+            outGain.connect(offlineCtx.destination);
+
+            source.start(0);
+            const renderedBuffer = await offlineCtx.startRendering();
+
+            if (onProgress) onProgress(0.95, 'Analyzing final master loudness & True-Peak...');
+            const lufsMeter = new LUFSMeter(sampleRate);
+            const finalStats = lufsMeter.analyzeAudioBuffer(renderedBuffer);
+            if (onProgress) onProgress(1.0, 'Mastering render complete!');
+
+            return {
+                masteredBuffer: renderedBuffer,
+                stats: finalStats
+            };
         }
 
         // 4. Block processing loop
