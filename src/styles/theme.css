@@ -1,8 +1,8 @@
-/* Precision Mastering Console Design System — 10 Curated Themes (5 Dark & 5 Night Modes) */
+/* Precision Mastering Console Design System — 10 Curated Themes (5 Dark & 5 Light Modes) */
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..800;1,9..40,400..800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=Syne:wght@500;700;800&display=swap');
 
 :root {
-    /* Default Base Variables */
+    /* Standardized Hardware Metric Tokens */
     --toolbar-height: 32px;
     --transport-btn-height: 40px;
     --val-badge-width: 66px;
@@ -10,7 +10,7 @@
     --transition-normal: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     --texture-metal: url('/textures/studio_metal.jpg');
 
-    /* Default (Dark Studio Gunmetal) */
+    /* Default Base (Dark Studio Gunmetal) */
     --bg-primary: #0a0d14;
     --bg-secondary: #0f1420;
     --bg-card: #131926;
@@ -41,16 +41,16 @@
     --text-dim: #475569;
 
     --border-subtle: rgba(255, 255, 255, 0.10);
-    --border-bright: rgba(255, 255, 255, 0.20);
-    --border-highlight: rgba(0, 229, 255, 0.5);
+    --border-bright: rgba(255, 255, 255, 0.22);
+    --border-highlight: rgba(0, 229, 255, 0.55);
 
     --card-radius: 6px;
     --control-radius: 4px;
 
-    --shadow-card: 0 8px 28px -4px rgba(0, 0, 0, 0.75), 0 0 0 1px var(--border-subtle);
+    --shadow-card: 0 8px 30px -4px rgba(0, 0, 0, 0.8), 0 0 0 1px var(--border-subtle);
     --shadow-recessed: inset 0 2px 6px rgba(0, 0, 0, 0.85), inset 0 0 0 1px rgba(0, 0, 0, 0.6);
     --shadow-button: 0 2px 4px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.15);
-    --hardware-screw: radial-gradient(circle, #475569 35%, #1e293b 65%, #0f172a 100%);
+    --hardware-screw: radial-gradient(circle, #64748b 35%, #334155 65%, #0f172a 100%);
 }
 
 /* ==========================================================================
@@ -269,218 +269,219 @@
 }
 
 /* ==========================================================================
-   5 NIGHT MODES (Zero Light Bleed, Cyberpunk, Deep Sea, Darkroom, Aurora)
+   5 LIGHT THEMES (Aluminum Studio, Polar Glacial, Champagne, Clay, Lavender)
    ========================================================================== */
 
-/* 6. NIGHT: OLED Pure Pitch (Zero Light Bleed, Surgical Tech Monospace) */
-[data-theme="night_oled"] {
-    --bg-primary: #000000;
-    --bg-secondary: #050505;
-    --bg-card: #0a0a0a;
-    --bg-card-hover: #121212;
-    --bg-card-header: #0e0e0e;
-    --bg-panel: #0a0a0a;
-    --bg-input: #000000;
-    --bg-well: #020202;
-    --bg-viewport: #000000;
+/* 6. LIGHT: Bright Studio Console (Anodized Silver Mastering Console) */
+[data-theme="light_studio"] {
+    --bg-primary: #f1f5f9;
+    --bg-secondary: #e2e8f0;
+    --bg-card: #ffffff;
+    --bg-card-hover: #f8fafc;
+    --bg-card-header: #f8fafc;
+    --bg-panel: #ffffff;
+    --bg-input: #f1f5f9;
+    --bg-well: #e2e8f0;
+    --bg-viewport: #0a0e17;
 
-    --color-target: #00f0ff;
-    --color-target-glow: rgba(0, 240, 255, 0.55);
-    --color-ref: #ffaa00;
-    --color-ref-glow: rgba(255, 170, 0, 0.55);
-    --color-match: #00ffaa;
-    --color-match-glow: rgba(0, 255, 170, 0.55);
-    --color-mastered: #b866ff;
-    --color-mastered-glow: rgba(184, 102, 255, 0.55);
-    --color-danger: #ff3344;
+    --color-target: #0284c7;
+    --color-target-glow: rgba(2, 132, 199, 0.25);
+    --color-ref: #d97706;
+    --color-ref-glow: rgba(217, 119, 6, 0.25);
+    --color-match: #059669;
+    --color-match-glow: rgba(5, 150, 105, 0.25);
+    --color-mastered: #7c3aed;
+    --color-mastered-glow: rgba(124, 58, 237, 0.25);
+    --color-danger: #dc2626;
 
-    --font-heading: 'Space Grotesk', sans-serif;
-    --font-body: 'JetBrains Mono', monospace;
+    --font-heading: 'Inter', -apple-system, sans-serif;
+    --font-body: 'Inter', -apple-system, sans-serif;
     --font-mono: 'JetBrains Mono', monospace;
 
-    --text-primary: #ffffff;
-    --text-secondary: #a3a3a3;
-    --text-muted: #666666;
-    --text-dim: #3a3a3a;
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #64748b;
+    --text-dim: #94a3b8;
 
-    --border-subtle: rgba(255, 255, 255, 0.14);
-    --border-bright: rgba(255, 255, 255, 0.35);
-    --border-highlight: rgba(0, 240, 255, 0.75);
+    --border-subtle: rgba(15, 23, 42, 0.10);
+    --border-bright: rgba(15, 23, 42, 0.22);
+    --border-highlight: rgba(2, 132, 199, 0.55);
 
-    --card-radius: 2px;
-    --control-radius: 2px;
-
-    --shadow-card: 0 0 0 1px rgba(255, 255, 255, 0.16), 0 8px 30px rgba(0, 0, 0, 1.0);
-    --shadow-recessed: inset 0 2px 8px rgba(0, 0, 0, 0.95), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
-    --hardware-screw: radial-gradient(circle, #525252 35%, #262626 65%, #0a0a0a 100%);
-}
-
-/* 7. NIGHT: Cyberpunk Neo-Tokyo (Neon Lasers & Holographic High Energy) */
-[data-theme="night_cyberpunk"] {
-    --bg-primary: #04020a;
-    --bg-secondary: #090514;
-    --bg-card: #100822;
-    --bg-card-hover: #190e34;
-    --bg-card-header: #140a2a;
-    --bg-panel: #100822;
-    --bg-input: #04020a;
-    --bg-well: #020106;
-    --bg-viewport: #020105;
-
-    --color-target: #00ffff;
-    --color-target-glow: rgba(0, 255, 255, 0.65);
-    --color-ref: #ff007f;
-    --color-ref-glow: rgba(255, 0, 127, 0.65);
-    --color-match: #00ff88;
-    --color-match-glow: rgba(0, 255, 136, 0.65);
-    --color-mastered: #ffe600;
-    --color-mastered-glow: rgba(255, 230, 0, 0.65);
-    --color-danger: #ff0055;
-
-    --font-heading: 'Syne', sans-serif;
-    --font-body: 'Syne', sans-serif;
-    --font-mono: 'JetBrains Mono', monospace;
-
-    --text-primary: #ffffff;
-    --text-secondary: #e0b0ff;
-    --text-muted: #8a55cc;
-    --text-dim: #4d2380;
-
-    --border-subtle: rgba(0, 255, 255, 0.22);
-    --border-bright: rgba(255, 0, 127, 0.50);
-    --border-highlight: rgba(0, 255, 255, 0.85);
-
-    --card-radius: 8px;
+    --card-radius: 6px;
     --control-radius: 4px;
 
-    --shadow-card: 0 10px 36px -4px rgba(4, 2, 10, 0.95), 0 0 15px rgba(0, 255, 255, 0.12), 0 0 0 1px var(--border-subtle);
-    --hardware-screw: radial-gradient(circle, #ff007f 35%, #7a003d 65%, #15000b 100%);
+    --shadow-card: 0 4px 18px -2px rgba(15, 23, 42, 0.08), 0 0 0 1px var(--border-subtle);
+    --shadow-recessed: inset 0 2px 4px rgba(15, 23, 42, 0.1), inset 0 0 0 1px rgba(15, 23, 42, 0.06);
+    --shadow-button: 0 1px 3px rgba(15, 23, 42, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    --hardware-screw: radial-gradient(circle, #e2e8f0 35%, #cbd5e1 65%, #94a3b8 100%);
 }
 
-/* 8. NIGHT: Deep Mariana Abyss (Bioluminescent Trench & Marine Azure) */
-[data-theme="night_abyss"] {
-    --bg-primary: #02050e;
-    --bg-secondary: #050b1a;
-    --bg-card: #091228;
-    --bg-card-hover: #0e1b3a;
-    --bg-card-header: #0c1630;
-    --bg-panel: #091228;
-    --bg-input: #02050e;
-    --bg-well: #010309;
-    --bg-viewport: #010207;
+/* 7. LIGHT: Polar Glacial White (Minimalist Scandinavian Acoustic Suite) */
+[data-theme="light_polar"] {
+    --bg-primary: #f8fafc;
+    --bg-secondary: #f1f5f9;
+    --bg-card: #ffffff;
+    --bg-card-hover: #f8fafc;
+    --bg-card-header: #f1f5f9;
+    --bg-panel: #ffffff;
+    --bg-input: #f8fafc;
+    --bg-well: #e2e8f0;
+    --bg-viewport: #0c121e;
 
-    --color-target: #00e5ff;
-    --color-target-glow: rgba(0, 229, 255, 0.55);
-    --color-ref: #38bdf8;
-    --color-ref-glow: rgba(56, 189, 248, 0.55);
-    --color-match: #00f5a0;
-    --color-match-glow: rgba(0, 245, 160, 0.55);
-    --color-mastered: #60a5fa;
-    --color-mastered-glow: rgba(96, 165, 250, 0.55);
-    --color-danger: #f43f5e;
-
-    --font-heading: 'Outfit', sans-serif;
-    --font-body: 'Outfit', sans-serif;
-    --font-mono: 'JetBrains Mono', monospace;
-
-    --text-primary: #f0f9ff;
-    --text-secondary: #7dd3fc;
-    --text-muted: #0284c7;
-    --text-dim: #034f78;
-
-    --border-subtle: rgba(0, 229, 255, 0.18);
-    --border-bright: rgba(0, 229, 255, 0.45);
-    --border-highlight: rgba(0, 229, 255, 0.8);
-
-    --card-radius: 12px;
-    --control-radius: 6px;
-
-    --shadow-card: 0 12px 40px -4px rgba(1, 3, 9, 0.95), 0 0 20px rgba(0, 229, 255, 0.1), 0 0 0 1px var(--border-subtle);
-    --hardware-screw: radial-gradient(circle, #00e5ff 35%, #0369a1 65%, #082f49 100%);
-}
-
-/* 9. NIGHT: Crimson Darkroom (Astrophotography Red Shift & Zero Eye Strain) */
-[data-theme="night_crimson"] {
-    --bg-primary: #080203;
-    --bg-secondary: #0f0406;
-    --bg-card: #18070a;
-    --bg-card-hover: #220a0f;
-    --bg-card-header: #1c080d;
-    --bg-panel: #18070a;
-    --bg-input: #080203;
-    --bg-well: #040102;
-    --bg-viewport: #030101;
-
-    --color-target: #ff1e40;
-    --color-target-glow: rgba(255, 30, 64, 0.55);
-    --color-ref: #ff6b00;
-    --color-ref-glow: rgba(255, 107, 0, 0.55);
-    --color-match: #ff4d6d;
-    --color-match-glow: rgba(255, 77, 109, 0.55);
-    --color-mastered: #ff0055;
-    --color-mastered-glow: rgba(255, 0, 85, 0.55);
-    --color-danger: #ff0033;
-
-    --font-heading: 'Space Grotesk', sans-serif;
-    --font-body: 'Inter', sans-serif;
-    --font-mono: 'JetBrains Mono', monospace;
-
-    --text-primary: #ffe4e6;
-    --text-secondary: #fda4af;
-    --text-muted: #9f1239;
-    --text-dim: #4c0519;
-
-    --border-subtle: rgba(255, 30, 64, 0.22);
-    --border-bright: rgba(255, 30, 64, 0.50);
-    --border-highlight: rgba(255, 30, 64, 0.85);
-
-    --card-radius: 4px;
-    --control-radius: 2px;
-
-    --shadow-card: 0 10px 32px -4px rgba(4, 1, 2, 0.95), 0 0 16px rgba(255, 30, 64, 0.12), 0 0 0 1px var(--border-subtle);
-    --hardware-screw: radial-gradient(circle, #e11d48 35%, #881337 65%, #2a030b 100%);
-}
-
-/* 10. NIGHT: Aurora Borealis Nocturne (Polar Emerald & Spectral Violet) */
-[data-theme="night_aurora"] {
-    --bg-primary: #020b08;
-    --bg-secondary: #05140f;
-    --bg-card: #081e17;
-    --bg-card-hover: #0d2c22;
-    --bg-card-header: #0b241c;
-    --bg-panel: #081e17;
-    --bg-input: #020b08;
-    --bg-well: #010604;
-    --bg-viewport: #010503;
-
-    --color-target: #00ff9d;
-    --color-target-glow: rgba(0, 255, 157, 0.55);
-    --color-ref: #38bdf8;
-    --color-ref-glow: rgba(56, 189, 248, 0.55);
-    --color-match: #34d399;
-    --color-match-glow: rgba(52, 211, 153, 0.55);
-    --color-mastered: #c084fc;
-    --color-mastered-glow: rgba(192, 132, 252, 0.55);
-    --color-danger: #f87171;
+    --color-target: #0284c7;
+    --color-target-glow: rgba(2, 132, 199, 0.25);
+    --color-ref: #ea580c;
+    --color-ref-glow: rgba(234, 88, 12, 0.25);
+    --color-match: #10b981;
+    --color-match-glow: rgba(16, 185, 129, 0.25);
+    --color-mastered: #6366f1;
+    --color-mastered-glow: rgba(99, 102, 241, 0.25);
+    --color-danger: #ef4444;
 
     --font-heading: 'Plus Jakarta Sans', sans-serif;
     --font-body: 'Plus Jakarta Sans', sans-serif;
     --font-mono: 'JetBrains Mono', monospace;
 
-    --text-primary: #ecfdf5;
-    --text-secondary: #a7f3d0;
-    --text-muted: #059669;
-    --text-dim: #064e3b;
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #64748b;
+    --text-dim: #94a3b8;
 
-    --border-subtle: rgba(0, 255, 157, 0.20);
-    --border-bright: rgba(0, 255, 157, 0.45);
-    --border-highlight: rgba(0, 255, 157, 0.85);
+    --border-subtle: rgba(15, 23, 42, 0.08);
+    --border-bright: rgba(2, 132, 199, 0.25);
+    --border-highlight: rgba(2, 132, 199, 0.6);
+
+    --card-radius: 12px;
+    --control-radius: 6px;
+
+    --shadow-card: 0 8px 24px -4px rgba(15, 23, 42, 0.06), 0 0 0 1px var(--border-subtle);
+    --hardware-screw: radial-gradient(circle, #f8fafc 35%, #e2e8f0 65%, #cbd5e1 100%);
+}
+
+/* 8. LIGHT: Champagne Gold & Cream (Japanese Audiophile Hi-Fi Heritage) */
+[data-theme="light_champagne"] {
+    --bg-primary: #f7f3ec;
+    --bg-secondary: #eee7dc;
+    --bg-card: #fffdfa;
+    --bg-card-hover: #faf6ef;
+    --bg-card-header: #f5efe4;
+    --bg-panel: #fffdfa;
+    --bg-input: #f7f3ec;
+    --bg-well: #e8dfd1;
+    --bg-viewport: #18120b;
+
+    --color-target: #b45309;
+    --color-target-glow: rgba(180, 83, 9, 0.25);
+    --color-ref: #c2410c;
+    --color-ref-glow: rgba(194, 65, 12, 0.25);
+    --color-match: #047857;
+    --color-match-glow: rgba(4, 120, 87, 0.25);
+    --color-mastered: #9333ea;
+    --color-mastered-glow: rgba(147, 51, 234, 0.25);
+    --color-danger: #dc2626;
+
+    --font-heading: 'DM Sans', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+
+    --text-primary: #291c13;
+    --text-secondary: #574334;
+    --text-muted: #876e5d;
+    --text-dim: #b8a394;
+
+    --border-subtle: rgba(180, 83, 9, 0.14);
+    --border-bright: rgba(180, 83, 9, 0.32);
+    --border-highlight: rgba(180, 83, 9, 0.65);
+
+    --card-radius: 10px;
+    --control-radius: 5px;
+
+    --shadow-card: 0 6px 20px -2px rgba(60, 40, 20, 0.08), 0 0 0 1px var(--border-subtle);
+    --hardware-screw: radial-gradient(circle, #fde68a 35%, #d97706 65%, #92400e 100%);
+}
+
+/* 9. LIGHT: Desert Clay & Terracotta (Architectural Tactile Minimalist) */
+[data-theme="light_clay"] {
+    --bg-primary: #f3f2ef;
+    --bg-secondary: #e7e5e0;
+    --bg-card: #ffffff;
+    --bg-card-hover: #f9f8f6;
+    --bg-card-header: #eeece7;
+    --bg-panel: #ffffff;
+    --bg-input: #f3f2ef;
+    --bg-well: #dedad2;
+    --bg-viewport: #131416;
+
+    --color-target: #ea580c;
+    --color-target-glow: rgba(234, 88, 12, 0.25);
+    --color-ref: #d97706;
+    --color-ref-glow: rgba(217, 119, 6, 0.25);
+    --color-match: #15803d;
+    --color-match-glow: rgba(21, 128, 61, 0.25);
+    --color-mastered: #0284c7;
+    --color-mastered-glow: rgba(2, 132, 199, 0.25);
+    --color-danger: #e11d48;
+
+    --font-heading: 'Space Grotesk', sans-serif;
+    --font-body: 'Space Grotesk', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+
+    --text-primary: #1c1917;
+    --text-secondary: #57534e;
+    --text-muted: #78716c;
+    --text-dim: #a8a29e;
+
+    --border-subtle: rgba(28, 25, 23, 0.12);
+    --border-bright: rgba(234, 88, 12, 0.35);
+    --border-highlight: rgba(234, 88, 12, 0.7);
+
+    --card-radius: 4px;
+    --control-radius: 3px;
+
+    --shadow-card: 0 4px 16px -2px rgba(28, 25, 23, 0.08), 0 0 0 1px var(--border-subtle);
+    --hardware-screw: radial-gradient(circle, #e7e5e0 35%, #a8a29e 65%, #57534e 100%);
+}
+
+/* 10. LIGHT: Lilac Quartz & Rose (Luxury Pastel Boutique Studio) */
+[data-theme="light_lavender"] {
+    --bg-primary: #f6f3fc;
+    --bg-secondary: #ece7f7;
+    --bg-card: #ffffff;
+    --bg-card-hover: #fbf9ff;
+    --bg-card-header: #f2edf9;
+    --bg-panel: #ffffff;
+    --bg-input: #f6f3fc;
+    --bg-well: #e3daf2;
+    --bg-viewport: #120e1e;
+
+    --color-target: #7c3aed;
+    --color-target-glow: rgba(124, 58, 237, 0.25);
+    --color-ref: #e11d48;
+    --color-ref-glow: rgba(225, 29, 72, 0.25);
+    --color-match: #059669;
+    --color-match-glow: rgba(5, 150, 105, 0.25);
+    --color-mastered: #c026d3;
+    --color-mastered-glow: rgba(192, 38, 211, 0.25);
+    --color-danger: #dc2626;
+
+    --font-heading: 'Outfit', sans-serif;
+    --font-body: 'Outfit', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+
+    --text-primary: #1e1534;
+    --text-secondary: #52446d;
+    --text-muted: #796c94;
+    --text-dim: #ac9fc2;
+
+    --border-subtle: rgba(124, 58, 237, 0.12);
+    --border-bright: rgba(124, 58, 237, 0.32);
+    --border-highlight: rgba(124, 58, 237, 0.65);
 
     --card-radius: 16px;
     --control-radius: 8px;
 
-    --shadow-card: 0 12px 40px -4px rgba(1, 6, 4, 0.95), 0 0 20px rgba(0, 255, 157, 0.12), 0 0 0 1px var(--border-subtle);
-    --hardware-screw: radial-gradient(circle, #10b981 35%, #065f46 65%, #022c22 100%);
+    --shadow-card: 0 8px 26px -3px rgba(30, 20, 50, 0.08), 0 0 0 1px var(--border-subtle);
+    --hardware-screw: radial-gradient(circle, #f3e8ff 35%, #c084fc 65%, #7e22ce 100%);
 }
 
 /* ==========================================================================
@@ -506,7 +507,7 @@ body {
     transition: background-color var(--transition-normal), color var(--transition-normal);
 }
 
-/* Atmospheric Background Gradients for each theme */
+/* Dynamic Atmospheric Backgrounds for each theme */
 [data-theme="dark"],
 [data-theme="dark_studio"] body {
     background-color: #0a0d14;
@@ -547,39 +548,272 @@ body {
         linear-gradient(180deg, #0a0612 0%, #150e24 50%, #0a0612 100%);
 }
 
-[data-theme="night_oled"] body {
-    background-color: #000000 !important;
-    background-image: none !important;
+[data-theme="light_studio"] body {
+    background-color: #f1f5f9;
+    background-image: 
+        radial-gradient(circle at 10% 5%, rgba(2, 132, 199, 0.04) 0%, transparent 40%),
+        radial-gradient(circle at 90% 10%, rgba(217, 119, 6, 0.04) 0%, transparent 40%),
+        linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%);
 }
 
-[data-theme="night_cyberpunk"] body {
-    background-color: #04020a;
+[data-theme="light_polar"] body {
+    background-color: #f8fafc;
     background-image: 
-        radial-gradient(circle at 15% 0%, rgba(0, 255, 255, 0.07) 0%, transparent 50%),
-        radial-gradient(circle at 85% 0%, rgba(255, 0, 127, 0.07) 0%, transparent 50%),
-        linear-gradient(180deg, #020106 0%, #0a0516 50%, #020106 100%);
+        radial-gradient(circle at 30% 0%, rgba(2, 132, 199, 0.04) 0%, transparent 50%),
+        linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%);
 }
 
-[data-theme="night_abyss"] body {
-    background-color: #02050e;
+[data-theme="light_champagne"] body {
+    background-color: #f7f3ec;
     background-image: 
-        radial-gradient(circle at 20% 0%, rgba(0, 229, 255, 0.06) 0%, transparent 50%),
-        radial-gradient(circle at 80% 0%, rgba(0, 245, 160, 0.04) 0%, transparent 50%),
-        linear-gradient(180deg, #010309 0%, #050b1a 50%, #010309 100%);
+        radial-gradient(circle at 20% 0%, rgba(180, 83, 9, 0.05) 0%, transparent 50%),
+        radial-gradient(circle at 80% 10%, rgba(194, 65, 12, 0.04) 0%, transparent 50%),
+        linear-gradient(180deg, #fffdfa 0%, #eee7dc 100%);
 }
 
-[data-theme="night_crimson"] body {
-    background-color: #080203;
+[data-theme="light_clay"] body {
+    background-color: #f3f2ef;
     background-image: 
-        radial-gradient(circle at 20% 0%, rgba(255, 30, 64, 0.07) 0%, transparent 50%),
-        radial-gradient(circle at 80% 10%, rgba(255, 107, 0, 0.04) 0%, transparent 50%),
-        linear-gradient(180deg, #040102 0%, #0f0406 50%, #040102 100%);
+        radial-gradient(circle at 20% 0%, rgba(234, 88, 12, 0.04) 0%, transparent 50%),
+        linear-gradient(180deg, #ffffff 0%, #e7e5e0 100%);
 }
 
-[data-theme="night_aurora"] body {
-    background-color: #020b08;
+[data-theme="light_lavender"] body {
+    background-color: #f6f3fc;
     background-image: 
-        radial-gradient(circle at 25% 0%, rgba(0, 255, 157, 0.07) 0%, transparent 55%),
-        radial-gradient(circle at 75% 0%, rgba(192, 132, 252, 0.05) 0%, transparent 55%),
-        linear-gradient(180deg, #010604 0%, #05140f 50%, #010604 100%);
+        radial-gradient(circle at 20% 0%, rgba(124, 58, 237, 0.05) 0%, transparent 50%),
+        radial-gradient(circle at 80% 10%, rgba(225, 29, 72, 0.04) 0%, transparent 50%),
+        linear-gradient(180deg, #ffffff 0%, #ece7f7 100%);
+}
+
+/* ==========================================================================
+   Comprehensive Light Theme Hardware Adaptations
+   ========================================================================== */
+
+[data-theme^="light_"] .app-header {
+    background: var(--bg-card) url('/textures/studio_metal.jpg');
+    background-blend-mode: soft-light;
+    border: 1px solid var(--border-subtle);
+    box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.08);
+}
+
+[data-theme^="light_"] .app-header .logo-text h1 {
+    color: var(--text-primary);
+    text-shadow: none;
+}
+
+[data-theme^="light_"] .app-header .logo-text .subtitle {
+    color: var(--text-secondary);
+}
+
+[data-theme^="light_"] .bottom-transport-bar {
+    background: var(--bg-card) url('/textures/studio_metal.jpg');
+    background-blend-mode: soft-light;
+    border-top: 1px solid var(--border-subtle);
+    box-shadow: 0 -4px 24px rgba(15, 23, 42, 0.08);
+}
+
+[data-theme^="light_"] .btn-transport {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border-color: var(--border-subtle);
+}
+
+[data-theme^="light_"] .btn-transport:hover {
+    background: var(--bg-card-hover);
+    color: var(--text-primary);
+}
+
+[data-theme^="light_"] .timecode-box {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border-color: var(--border-subtle);
+}
+
+[data-theme^="light_"] .mon-pill {
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    border-color: var(--border-subtle);
+}
+
+[data-theme^="light_"] .mon-pill:hover {
+    color: var(--text-primary);
+    background: var(--bg-card-hover);
+}
+
+[data-theme^="light_"] .mon-pill.active {
+    background: var(--color-target);
+    color: #ffffff;
+    border-color: var(--color-target);
+}
+
+[data-theme^="light_"] .matrix-pill {
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    border-color: var(--border-subtle);
+}
+
+[data-theme^="light_"] .matrix-pill:hover {
+    color: var(--text-primary);
+    background: var(--bg-card-hover);
+}
+
+[data-theme^="light_"] .matrix-pill.active {
+    background: var(--color-match);
+    color: #ffffff;
+    border-color: var(--color-match);
+}
+
+[data-theme^="light_"] .btn-autogain-match {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border-color: var(--border-subtle);
+}
+
+[data-theme^="light_"] .transport-phase-corr {
+    background: var(--bg-secondary);
+    border-color: var(--border-subtle);
+}
+
+[data-theme^="light_"] .phase-corr-title {
+    color: var(--text-secondary);
+}
+
+[data-theme^="light_"] .phase-corr-val {
+    color: var(--text-primary);
+}
+
+[data-theme^="light_"] .master-controls-section {
+    background: var(--bg-card) url('/textures/studio_metal.jpg');
+    background-blend-mode: soft-light;
+    border: 1px solid var(--border-subtle);
+    box-shadow: 0 4px 18px -2px rgba(15, 23, 42, 0.08);
+}
+
+[data-theme^="light_"] .hero-match-title {
+    color: var(--text-primary);
+    text-shadow: none;
+}
+
+[data-theme^="light_"] .hero-match-info p {
+    color: var(--text-secondary);
+}
+
+[data-theme^="light_"] .signal-patch-highway {
+    background: var(--bg-card);
+    background-blend-mode: soft-light;
+    border-color: var(--border-subtle);
+    box-shadow: inset 0 1px 4px rgba(15, 23, 42, 0.05);
+}
+
+[data-theme^="light_"] .patch-io-port {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border-color: var(--border-subtle);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+}
+
+[data-theme^="light_"] .patch-node-plug {
+    background: var(--bg-secondary);
+    border-color: var(--border-subtle);
+}
+
+[data-theme^="light_"] .patch-node-plug:hover {
+    background: var(--bg-card-hover);
+}
+
+[data-theme^="light_"] .plug-name {
+    color: var(--text-primary);
+}
+
+[data-theme^="light_"] .module-card-header {
+    background: var(--bg-card-header);
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+[data-theme^="light_"] .module-title {
+    color: var(--text-primary);
+}
+
+[data-theme^="light_"] .btn-module-power {
+    background: var(--bg-secondary);
+    border-color: var(--border-subtle);
+    color: var(--text-secondary);
+}
+
+[data-theme^="light_"] .rack-history-group {
+    background: var(--bg-secondary);
+    border-color: var(--border-subtle);
+}
+
+[data-theme^="light_"] .btn-secondary {
+    background: linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%);
+    color: #1e293b;
+    border-color: rgba(15, 23, 42, 0.16);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08), inset 0 1px 0 #ffffff;
+}
+
+[data-theme^="light_"] .btn-secondary:hover {
+    background: #ffffff;
+    border-color: var(--border-bright);
+    color: var(--text-primary);
+}
+
+[data-theme^="light_"] .status-badge {
+    background: var(--bg-card);
+    color: var(--text-primary);
+    border-color: var(--border-subtle);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme^="light_"] .styled-select {
+    background-color: var(--bg-card);
+    color: var(--text-primary);
+}
+
+[data-theme^="light_"] .theme-card {
+    background: var(--bg-card);
+    border-color: var(--border-subtle);
+    box-shadow: 0 2px 10px rgba(15, 23, 42, 0.06);
+}
+
+[data-theme^="light_"] .theme-card:hover {
+    box-shadow: 0 8px 24px -4px rgba(15, 23, 42, 0.12);
+}
+
+[data-theme^="light_"] .theme-tab-btn {
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    border-color: var(--border-subtle);
+}
+
+[data-theme^="light_"] .theme-tab-btn.active {
+    background: var(--color-target);
+    color: #ffffff;
+    border-color: var(--color-target);
+}
+
+[data-theme^="light_"] .preset-card {
+    background: var(--bg-card);
+    border-color: var(--border-subtle);
+}
+
+[data-theme^="light_"] .preset-name {
+    color: var(--text-primary);
+}
+
+[data-theme^="light_"] .metric-card {
+    background: var(--bg-secondary);
+    border-color: var(--border-subtle);
+}
+
+[data-theme^="light_"] .metric-val {
+    color: var(--text-primary);
+}
+
+[data-theme^="light_"] .module-help-dialog {
+    background-color: var(--bg-card);
+    background-blend-mode: soft-light;
+    border-color: var(--border-subtle);
+    box-shadow: 0 20px 60px rgba(15, 23, 42, 0.25);
 }

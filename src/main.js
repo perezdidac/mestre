@@ -59,7 +59,7 @@ class MasteringApp {
     }
 
     initUi() {
-        // 10 UI Themes (5 Dark & 5 Night Modes)
+        // 10 UI Themes (5 Dark & 5 Light Modes)
         ThemeManager.init();
         const selectTheme = document.getElementById('select-ui-theme');
         if (selectTheme) {
@@ -643,7 +643,7 @@ class MasteringApp {
                         <div class="theme-card-title-group">
                             <h4>
                                 ${t.name}
-                                <span class="theme-mode-tag">${t.mode === 'night' ? '🌌 NIGHT' : '🌙 DARK'}</span>
+                                <span class="theme-mode-tag">${t.mode === 'light' ? '☀️ LIGHT' : '🌙 DARK'}</span>
                             </h4>
                         </div>
                         <span class="theme-spec-pill" style="font-weight:700;color:var(--color-target);">${t.badge}</span>

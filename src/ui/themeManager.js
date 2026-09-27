@@ -1,6 +1,6 @@
 /**
  * Mestre UI Theme System
- * 10 Curated Professional Audio Workstation Themes (5 Dark & 5 Night Modes)
+ * 10 Curated Professional Audio Workstation Themes (5 Dark & 5 Light Modes)
  * Complete with distinct palettes, typography (Google Fonts), corner radiuses, and tactile styling.
  */
 
@@ -120,116 +120,116 @@ export const THEMES = [
     },
 
     // -------------------------------------------------------------------------
-    // 5 NIGHT MODES
+    // 5 LIGHT MODES
     // -------------------------------------------------------------------------
     {
-        id: 'night_oled',
-        name: 'OLED Pure Pitch Stealth',
-        mode: 'night',
-        subtitle: 'Zero Light Bleed Surgical Precision',
-        badge: 'Stealth 2px',
-        fontHeading: 'Space Grotesk',
-        fontBody: 'JetBrains Mono',
-        fontMono: 'JetBrains Mono',
-        radiusCard: '2px',
-        radiusControl: '2px',
-        heritage: 'Aviation HUDs, OLED Darkrooms, Tactical Monospace',
-        description: 'True 100% black (#000000) background for zero light bleed in dark control rooms. Surgical 2px borders and high-contrast meters.',
-        swatches: {
-            bg: '#000000',
-            card: '#0a0a0a',
-            target: '#00f0ff',
-            ref: '#ffaa00',
-            match: '#00ffaa',
-            accent: '#b866ff'
-        }
-    },
-    {
-        id: 'night_cyberpunk',
-        name: 'Cyberpunk Neo-Tokyo',
-        mode: 'night',
-        subtitle: 'High-Voltage Synthetic Nocturne',
-        badge: 'Neon 8px',
-        fontHeading: 'Syne',
-        fontBody: 'Syne',
-        fontMono: 'JetBrains Mono',
-        radiusCard: '8px',
-        radiusControl: '4px',
-        heritage: 'Akira, Blade Runner, Shinjuku Midnight Rain',
-        description: 'Deep midnight indigo with intense hyper-cyan lasers, hot magenta beams, and cyberpunk typography that comes alive in the dark.',
-        swatches: {
-            bg: '#04020a',
-            card: '#100822',
-            target: '#00ffff',
-            ref: '#ff007f',
-            match: '#00ff88',
-            accent: '#ffe600'
-        }
-    },
-    {
-        id: 'night_abyss',
-        name: 'Mariana Abyss Nocturne',
-        mode: 'night',
-        subtitle: 'Deep Trench Bioluminescent Azure',
-        badge: 'Aqua 12px',
-        fontHeading: 'Outfit',
-        fontBody: 'Outfit',
-        fontMono: 'JetBrains Mono',
-        radiusCard: '12px',
-        radiusControl: '6px',
-        heritage: 'Deep Sea Exploration, Bioluminescent Marine Science',
-        description: 'Deepest oceanic abyssal navy with bioluminescent aqua and marine emerald illumination. Calming, focused nocturnal depth.',
-        swatches: {
-            bg: '#02050e',
-            card: '#091228',
-            target: '#00e5ff',
-            ref: '#38bdf8',
-            match: '#00f5a0',
-            accent: '#60a5fa'
-        }
-    },
-    {
-        id: 'night_crimson',
-        name: 'Crimson Darkroom / Red Shift',
-        mode: 'night',
-        subtitle: 'Tactical Circadian Preservation',
-        badge: 'Ruby 4px',
-        fontHeading: 'Space Grotesk',
+        id: 'light_studio',
+        name: 'Bright Anodized Studio',
+        mode: 'light',
+        subtitle: 'Precision Silver Solid State Console',
+        badge: 'Studio 6px',
+        fontHeading: 'Inter',
         fontBody: 'Inter',
         fontMono: 'JetBrains Mono',
-        radiusCard: '4px',
-        radiusControl: '2px',
-        heritage: 'Submarine Night Ops, Astrophotography Darkroom',
-        description: 'Zero blue light emissions. Deep ember charcoal with ruby red and tactical infrared illumination to protect night-vision melatonin.',
+        radiusCard: '6px',
+        radiusControl: '4px',
+        heritage: 'Weiss, Grace Design, Benchmark Media Systems',
+        description: 'Crisp anodized aluminum console with deep slate primary accents, cerulean precision meters, amber reference indicators, and subtle recessed bevels.',
         swatches: {
-            bg: '#080203',
-            card: '#18070a',
-            target: '#ff1e40',
-            ref: '#ff6b00',
-            match: '#ff4d6d',
-            accent: '#ff0055'
+            bg: '#f1f5f9',
+            card: '#ffffff',
+            target: '#0284c7',
+            ref: '#d97706',
+            match: '#059669',
+            accent: '#7c3aed'
         }
     },
     {
-        id: 'night_aurora',
-        name: 'Aurora Borealis Nocturne',
-        mode: 'night',
-        subtitle: 'Arctic Midnight Polar Lights',
-        badge: 'Emerald 16px',
+        id: 'light_polar',
+        name: 'Polar Glacial Minimalist',
+        mode: 'light',
+        subtitle: 'Nordic Clean Acoustic Laboratory',
+        badge: 'Glacial 12px',
         fontHeading: 'Plus Jakarta Sans',
         fontBody: 'Plus Jakarta Sans',
         fontMono: 'JetBrains Mono',
+        radiusCard: '12px',
+        radiusControl: '6px',
+        heritage: 'Bang & Olufsen, Scandinavian Architectural Hi-Fi',
+        description: 'Ultra-clean pure white and glacial mist aesthetics with vivid sapphire blue, citrus flame reference, and smooth 12px ergonomic card curves.',
+        swatches: {
+            bg: '#f8fafc',
+            card: '#ffffff',
+            target: '#0284c7',
+            ref: '#ea580c',
+            match: '#10b981',
+            accent: '#6366f1'
+        }
+    },
+    {
+        id: 'light_champagne',
+        name: 'Champagne Gold & Cream',
+        mode: 'light',
+        subtitle: 'Japanese Audiophile Master Heritage',
+        badge: 'Gold 10px',
+        fontHeading: 'DM Sans',
+        fontBody: 'DM Sans',
+        fontMono: 'JetBrains Mono',
+        radiusCard: '10px',
+        radiusControl: '5px',
+        heritage: 'Accuphase, Luxman, Marantz Golden Reference',
+        description: 'Warm champagne gold and ivory silk velvet chassis, deep amber meters, brushed copper screws, and elegant vintage typography.',
+        swatches: {
+            bg: '#f7f3ec',
+            card: '#fffdfa',
+            target: '#b45309',
+            ref: '#c2410c',
+            match: '#047857',
+            accent: '#9333ea'
+        }
+    },
+    {
+        id: 'light_clay',
+        name: 'Desert Clay & Terracotta',
+        mode: 'light',
+        subtitle: 'Architectural Tactile Warmth',
+        badge: 'Tactile 4px',
+        fontHeading: 'Space Grotesk',
+        fontBody: 'Space Grotesk',
+        fontMono: 'JetBrains Mono',
+        radiusCard: '4px',
+        radiusControl: '3px',
+        heritage: 'Bauhaus Industrial Design, Modern Ceramic Architecture',
+        description: 'Warm sandy travertine and terracotta earth tones, crisp geometric 4px corners, punchy burnt orange, and forest match accents.',
+        swatches: {
+            bg: '#f3f2ef',
+            card: '#ffffff',
+            target: '#ea580c',
+            ref: '#d97706',
+            match: '#15803d',
+            accent: '#0284c7'
+        }
+    },
+    {
+        id: 'light_lavender',
+        name: 'Lilac Quartz & Boutique Rose',
+        mode: 'light',
+        subtitle: 'Parisian Haute Horlogerie & Sound',
+        badge: 'Boutique 16px',
+        fontHeading: 'Outfit',
+        fontBody: 'Outfit',
+        fontMono: 'JetBrains Mono',
         radiusCard: '16px',
         radiusControl: '8px',
-        heritage: 'Tromsø & Reykjavik Northern Lights Observatories',
-        description: 'Deep polar black with undulating northern lights spectral emerald, glacial mint, celestial violet glow, and organic 16px smooth curves.',
+        heritage: 'French Acoustic Salons, Boutique Studio Furniture',
+        description: 'Airy lilac mist and soft quartz rose with royal purple indicators, generous 16px pebble curvatures, and high-fashion luxury feel.',
         swatches: {
-            bg: '#020b08',
-            card: '#081e17',
-            target: '#00ff9d',
-            ref: '#38bdf8',
-            match: '#34d399',
-            accent: '#c084fc'
+            bg: '#f6f3fc',
+            card: '#ffffff',
+            target: '#7c3aed',
+            ref: '#e11d48',
+            match: '#059669',
+            accent: '#c026d3'
         }
     }
 ];

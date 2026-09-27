@@ -707,10 +707,13 @@
 /* EQ Bands 7-Band Grid */
 .eq-bands-grid {
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
+    grid-template-columns: repeat(7, minmax(78px, 1fr));
     gap: 10px;
     padding-top: 10px;
+    padding-bottom: 6px;
     border-top: 1px solid var(--border-subtle);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 .eq-band-col {
@@ -883,6 +886,12 @@
 @media (max-width: 900px) {
     .multiband-strips-grid {
         grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 520px) {
+    .multiband-strips-grid {
+        grid-template-columns: 1fr;
     }
 }
 
@@ -1086,3 +1095,47 @@
     text-align: right;
     flex-shrink: 0;
 }
+
+/* ==========================================================================
+   Mobile Viewport Adaptations for Rack Hardware
+   ========================================================================== */
+@media (max-width: 640px) {
+    .rack-section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    .rack-header-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+    .rack-ear {
+        width: 12px;
+        padding: 8px 0;
+    }
+    .rack-bolt {
+        width: 8px;
+        height: 8px;
+    }
+    .rack-bolt::after {
+        display: none;
+    }
+    .module-card-header {
+        padding: 10px 12px;
+    }
+    .module-title {
+        font-size: 12.5px;
+    }
+    .module-serial {
+        display: none;
+    }
+    .btn-module-power {
+        width: 72px;
+        font-size: 9px;
+    }
+    .signal-patch-highway {
+        padding: 8px 12px;
+        margin-bottom: 16px;
+    }
+}
+

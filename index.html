@@ -92,8 +92,8 @@
                     <span>PRE-FLIGHT</span>
                 </button>
 
-                <!-- 10 Theme Studio Switcher (5 Dark & 5 Night Modes) -->
-                <div class="theme-dropdown-container" title="Select Mestre UI Theme (5 Dark & 5 Night Modes)">
+                <!-- 10 Theme Studio Switcher (5 Dark & 5 Light Modes) -->
+                <div class="theme-dropdown-container" title="Select Mestre UI Theme (5 Dark & 5 Light Modes)">
                     <span class="header-control-tag">THEME</span>
                     <select class="styled-select theme-select" id="select-ui-theme" title="Switch UI Theme">
                         <optgroup label="🌙 5 Dark Modes">
@@ -103,12 +103,12 @@
                             <option value="dark_carbon">4. Carbon Matrix (3px)</option>
                             <option value="dark_amethyst">5. Royal Amethyst (14px)</option>
                         </optgroup>
-                        <optgroup label="🌌 5 Night Modes">
-                            <option value="night_oled">6. OLED Pure Pitch (2px)</option>
-                            <option value="night_cyberpunk">7. Cyberpunk Neo (8px)</option>
-                            <option value="night_abyss">8. Mariana Abyss (12px)</option>
-                            <option value="night_crimson">9. Crimson Darkroom (4px)</option>
-                            <option value="night_aurora">10. Aurora Borealis (16px)</option>
+                        <optgroup label="☀️ 5 Light Modes">
+                            <option value="light_studio">6. Bright Studio (6px)</option>
+                            <option value="light_polar">7. Polar Glacial (12px)</option>
+                            <option value="light_champagne">8. Champagne Cream (10px)</option>
+                            <option value="light_clay">9. Desert Terracotta (4px)</option>
+                            <option value="light_lavender">10. Lilac Boutique (16px)</option>
                         </optgroup>
                     </select>
                     <button class="btn btn-secondary btn-icon-theme" id="btn-open-theme-gallery" title="Open Theme Showcase Gallery">
@@ -596,7 +596,7 @@
         </div>
     </div>
 
-    <!-- UI Theme Showcase Gallery Modal (5 Dark & 5 Night Modes) -->
+    <!-- UI Theme Showcase Gallery Modal (5 Dark & 5 Light Modes) -->
     <div class="modal-backdrop" id="theme-gallery-modal">
         <div class="modal-dialog theme-gallery-dialog">
             <div class="modal-header">
@@ -604,7 +604,7 @@
                     <span class="theme-gallery-icon-badge">🎨</span>
                     <div>
                         <h3 class="modal-title">Mestre Studio Theme Gallery</h3>
-                        <span class="module-serial">10 CURATED CONSOLE STYLES // 5 DARK &amp; 5 NIGHT MODES</span>
+                        <span class="module-serial">10 CURATED CONSOLE STYLES // 5 DARK &amp; 5 LIGHT MODES</span>
                     </div>
                 </div>
                 <button class="btn btn-secondary" id="btn-close-theme-gallery" style="padding: 4px 8px;">✕</button>
@@ -613,7 +613,7 @@
                 <div class="theme-tabs-bar">
                     <button class="theme-tab-btn active" data-mode="all">All 10 Themes</button>
                     <button class="theme-tab-btn" data-mode="dark">🌙 5 Dark Modes</button>
-                    <button class="theme-tab-btn" data-mode="night">🌌 5 Night Modes</button>
+                    <button class="theme-tab-btn" data-mode="light">☀️ 5 Light Modes</button>
                 </div>
                 <div class="theme-gallery-grid" id="theme-gallery-grid">
                     <!-- Populated dynamically via themeManager.js -->

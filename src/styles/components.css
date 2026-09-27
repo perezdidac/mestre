@@ -679,13 +679,13 @@
 }
 
 .modal-dialog {
-    background: #0d1322;
+    background: var(--bg-card, #0d1322);
     border: 1px solid var(--border-bright);
-    border-radius: 16px;
+    border-radius: var(--card-radius, 16px);
     padding: 28px;
     width: 90%;
     max-width: 480px;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 35px rgba(0, 240, 255, 0.15);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 35px var(--color-target-glow);
     display: flex;
     flex-direction: column;
     gap: 20px;
@@ -701,7 +701,7 @@
     font-family: var(--font-heading);
     font-size: 18px;
     font-weight: 700;
-    color: #ffffff;
+    color: var(--text-primary, #ffffff);
 }
 
 .modal-body {
@@ -2023,9 +2023,9 @@
     color: var(--text-secondary);
 }
 
-.theme-card.mode-night .theme-mode-tag {
-    background: rgba(168, 85, 247, 0.2);
-    color: #d8b4fe;
+.theme-card.mode-light .theme-mode-tag {
+    background: rgba(245, 158, 11, 0.16);
+    color: #b45309;
 }
 
 .theme-card-desc {
