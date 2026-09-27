@@ -1,361 +1,485 @@
 /**
- * Professional Studio Mastering Presets Engine
- * Provides curated industry-standard genre & target mastering profiles,
- * plus custom user preset saving, export, and import.
+ * Mastering Sound Style Presets
+ * Curated, genre-specific mastering chain profiles designed with real-world mastering discipline.
+ * Each preset purposefully engages ONLY 2 to 4 relevant processor units with gentle, musical
+ * parameter calibrations, keeping unused units bypassed to preserve dynamic punch and clarity.
  */
 
 export const MASTERING_PRESETS = [
     {
+        id: 'initial_clean_bypass',
+        name: 'Initial Clean (All Bypassed / Flat)',
+        category: 'Utility & Flat',
+        description: 'Reference starting state. All modular rack processors bypassed for clean, uncolored signal evaluation.',
+        targetLufs: -14.0,
+        settings: {
+            parametric_eq: { bypassed: true, matchAmount: 1.0, smoothing: 0.5, bands: [
+                { id: 'sub', type: 'lowshelf', freq: 40, gain: 0.0, q: 0.71, enabled: true },
+                { id: 'low', type: 'peaking', freq: 120, gain: 0.0, q: 1.4, enabled: true },
+                { id: 'low_mid', type: 'peaking', freq: 350, gain: 0.0, q: 1.4, enabled: true },
+                { id: 'mid', type: 'peaking', freq: 1000, gain: 0.0, q: 1.4, enabled: true },
+                { id: 'high_mid', type: 'peaking', freq: 3200, gain: 0.0, q: 1.4, enabled: true },
+                { id: 'presence', type: 'peaking', freq: 6500, gain: 0.0, q: 1.4, enabled: true },
+                { id: 'air', type: 'highshelf', freq: 12000, gain: 0.0, q: 0.71, enabled: true }
+            ]},
+            multiband_compressor: { bypassed: true },
+            master_compressor: { bypassed: true },
+            opto_compressor: { bypassed: true },
+            tube_saturator: { bypassed: true },
+            analog_tape: { bypassed: true },
+            transient_shaper: { bypassed: true },
+            dynamic_deharsh: { bypassed: true },
+            studio_reverb: { bypassed: true },
+            stereo_imager: { bypassed: true },
+            lookahead_limiter: { bypassed: true, ceiling: -1.0, release: 80.0, softClip: false, drive: 0.0 }
+        }
+    },
+
+    {
         id: 'streaming_standard',
-        name: 'Streaming Standard (-14 LUFS)',
+        name: '1. Streaming Standard (-14.0 LUFS)',
         category: 'Distribution',
-        description: 'Optimized for Spotify, Apple Music, and YouTube. Transparent bus glue, -1.0 dBTP ceiling to prevent lossy encoding distortion.',
+        description: 'Optimized for Spotify, Apple Music, and YouTube. Engages 3 units: Parametric EQ (subtle air and low-end contour), VCA Master Compressor (1.3:1 gentle bus glue), and Peak Limiter (-1.0 dBTP ceiling preventing lossy codec clipping).',
+        targetLufs: -14.0,
         settings: {
             parametric_eq: {
-                matchAmount: 1.0,
-                smoothing: 0.5,
-                bands: [
-                    { id: 'sub', type: 'lowshelf', freq: 35, gain: -0.5, q: 0.71, enabled: true },
-                    { id: 'low', type: 'peaking', freq: 110, gain: 0.5, q: 1.2, enabled: true },
-                    { id: 'low_mid', type: 'peaking', freq: 320, gain: -0.8, q: 1.5, enabled: true },
-                    { id: 'mid', type: 'peaking', freq: 1200, gain: 0.0, q: 1.4, enabled: true },
-                    { id: 'high_mid', type: 'peaking', freq: 3400, gain: 0.6, q: 1.6, enabled: true },
-                    { id: 'presence', type: 'peaking', freq: 7500, gain: 0.8, q: 1.3, enabled: true },
-                    { id: 'air', type: 'highshelf', freq: 13000, gain: 1.2, q: 0.71, enabled: true }
-                ]
-            },
-            multiband_compressor: {
-                crossoverLow: 120,
-                crossoverMid: 1200,
-                crossoverHigh: 6000,
-                channelMode: 'stereo',
-                bands: [
-                    { threshold: -18, ratio: 2.2, attack: 35, release: 120, makeup: 0.5, bypass: false },
-                    { threshold: -16, ratio: 1.8, attack: 25, release: 90, makeup: 0.2, bypass: false },
-                    { threshold: -15, ratio: 1.8, attack: 18, release: 80, makeup: 0.3, bypass: false },
-                    { threshold: -17, ratio: 2.0, attack: 12, release: 60, makeup: 0.5, bypass: false }
-                ]
-            },
-            master_compressor: {
-                threshold: -16.0,
-                ratio: 2.0,
-                attack: 30.0,
-                release: 160.0,
-                knee: 6.0,
-                makeup: 1.0,
-                mix: 80.0
-            },
-            tube_saturator: {
-                drive: 10.0,
-                warmth: 35.0,
-                mix: 40.0,
-                outputGain: 0.0
-            },
-            stereo_imager: {
-                width: 112.0,
-                monoBassFreq: 90.0
-            },
-            lookahead_limiter: {
-                ceiling: -1.0,
-                release: 90.0,
-                softClip: true,
-                drive: 2.5
-            }
-        }
-    },
-    {
-        id: 'edm_club_punch',
-        name: 'Club & EDM Maximum Impact',
-        category: 'Electronic / Dance',
-        description: 'Aggressive modern club loudness (-8.0 LUFS target), rock-solid mono sub punch, energetic highs, and transient preservation.',
-        settings: {
-            parametric_eq: {
-                matchAmount: 1.2,
-                smoothing: 0.4,
-                bands: [
-                    { id: 'sub', type: 'lowshelf', freq: 45, gain: 2.0, q: 0.71, enabled: true },
-                    { id: 'low', type: 'peaking', freq: 100, gain: 1.2, q: 1.4, enabled: true },
-                    { id: 'low_mid', type: 'peaking', freq: 280, gain: -1.5, q: 1.8, enabled: true },
-                    { id: 'mid', type: 'peaking', freq: 1000, gain: -0.5, q: 1.4, enabled: true },
-                    { id: 'high_mid', type: 'peaking', freq: 3000, gain: 1.2, q: 1.4, enabled: true },
-                    { id: 'presence', type: 'peaking', freq: 6500, gain: 1.5, q: 1.4, enabled: true },
-                    { id: 'air', type: 'highshelf', freq: 12000, gain: 2.5, q: 0.71, enabled: true }
-                ]
-            },
-            multiband_compressor: {
-                crossoverLow: 130,
-                crossoverMid: 1400,
-                crossoverHigh: 7000,
-                channelMode: 'stereo',
-                bands: [
-                    { threshold: -20, ratio: 3.5, attack: 20, release: 80, makeup: 1.5, bypass: false },
-                    { threshold: -16, ratio: 2.2, attack: 15, release: 70, makeup: 0.5, bypass: false },
-                    { threshold: -15, ratio: 2.2, attack: 12, release: 60, makeup: 0.8, bypass: false },
-                    { threshold: -18, ratio: 2.8, attack: 8, release: 45, makeup: 1.2, bypass: false }
-                ]
-            },
-            master_compressor: {
-                threshold: -18.0,
-                ratio: 3.0,
-                attack: 15.0,
-                release: 100.0,
-                knee: 4.0,
-                makeup: 2.0,
-                mix: 90.0
-            },
-            tube_saturator: {
-                drive: 25.0,
-                warmth: 45.0,
-                mix: 55.0,
-                outputGain: 0.0
-            },
-            stereo_imager: {
-                width: 125.0,
-                monoBassFreq: 120.0
-            },
-            lookahead_limiter: {
-                ceiling: -0.3,
-                release: 60.0,
-                softClip: true,
-                drive: 5.5
-            }
-        }
-    },
-    {
-        id: 'hiphop_trap_warmth',
-        name: 'Modern Hip-Hop & 808 Trap',
-        category: 'Urban / Hip-Hop',
-        description: 'Controlled massive 808 sub, crisp hi-hat sizzle, clear vocal pocket, and analog punch.',
-        settings: {
-            parametric_eq: {
-                matchAmount: 1.0,
-                smoothing: 0.5,
-                bands: [
-                    { id: 'sub', type: 'lowshelf', freq: 50, gain: 2.5, q: 0.71, enabled: true },
-                    { id: 'low', type: 'peaking', freq: 120, gain: -0.5, q: 1.4, enabled: true },
-                    { id: 'low_mid', type: 'peaking', freq: 350, gain: -1.2, q: 1.6, enabled: true },
-                    { id: 'mid', type: 'peaking', freq: 1100, gain: 0.0, q: 1.4, enabled: true },
-                    { id: 'high_mid', type: 'peaking', freq: 2800, gain: 0.8, q: 1.5, enabled: true },
-                    { id: 'presence', type: 'peaking', freq: 5500, gain: 1.2, q: 1.4, enabled: true },
-                    { id: 'air', type: 'highshelf', freq: 11000, gain: 2.0, q: 0.71, enabled: true }
-                ]
-            },
-            multiband_compressor: {
-                crossoverLow: 110,
-                crossoverMid: 1100,
-                crossoverHigh: 5500,
-                channelMode: 'stereo',
-                bands: [
-                    { threshold: -19, ratio: 3.0, attack: 28, release: 110, makeup: 1.2, bypass: false },
-                    { threshold: -15, ratio: 2.0, attack: 20, release: 85, makeup: 0.4, bypass: false },
-                    { threshold: -14, ratio: 1.8, attack: 14, release: 70, makeup: 0.6, bypass: false },
-                    { threshold: -16, ratio: 2.2, attack: 10, release: 50, makeup: 0.8, bypass: false }
-                ]
-            },
-            master_compressor: {
-                threshold: -16.0,
-                ratio: 2.5,
-                attack: 25.0,
-                release: 130.0,
-                knee: 5.0,
-                makeup: 1.2,
-                mix: 85.0
-            },
-            tube_saturator: {
-                drive: 20.0,
-                warmth: 60.0,
-                mix: 50.0,
-                outputGain: 0.0
-            },
-            stereo_imager: {
-                width: 118.0,
-                monoBassFreq: 110.0
-            },
-            lookahead_limiter: {
-                ceiling: -0.5,
-                release: 75.0,
-                softClip: true,
-                drive: 4.0
-            }
-        }
-    },
-    {
-        id: 'vintage_analog_vinyl',
-        name: 'Warm Vintage Vinyl & Tape',
-        category: 'Vintage / Analog',
-        description: 'Harmonic richness, rounded transients, warm low-end weight, and gentle analog roll-off (ideal for vinyl pressing prep).',
-        settings: {
-            parametric_eq: {
-                matchAmount: 0.9,
+                bypassed: false,
+                matchAmount: 0.7,
                 smoothing: 0.6,
                 bands: [
-                    { id: 'sub', type: 'lowshelf', freq: 30, gain: -2.0, q: 0.71, enabled: true }, // Vinyl HPF cut
-                    { id: 'low', type: 'peaking', freq: 100, gain: 1.5, q: 1.2, enabled: true },
-                    { id: 'low_mid', type: 'peaking', freq: 380, gain: 0.8, q: 1.3, enabled: true },
-                    { id: 'mid', type: 'peaking', freq: 1200, gain: -0.5, q: 1.4, enabled: true },
-                    { id: 'high_mid', type: 'peaking', freq: 3200, gain: 0.5, q: 1.2, enabled: true },
-                    { id: 'presence', type: 'peaking', freq: 6500, gain: -0.6, q: 1.2, enabled: true },
-                    { id: 'air', type: 'highshelf', freq: 14000, gain: -1.5, q: 0.71, enabled: true } // Tape smoothing
-                ]
-            },
-            multiband_compressor: {
-                crossoverLow: 120,
-                crossoverMid: 1200,
-                crossoverHigh: 6000,
-                channelMode: 'stereo',
-                bands: [
-                    { threshold: -16, ratio: 1.8, attack: 45, release: 160, makeup: 0.4, bypass: false },
-                    { threshold: -14, ratio: 1.5, attack: 35, release: 120, makeup: 0.2, bypass: false },
-                    { threshold: -14, ratio: 1.5, attack: 25, release: 100, makeup: 0.2, bypass: false },
-                    { threshold: -15, ratio: 1.6, attack: 18, release: 80, makeup: 0.3, bypass: false }
+                    { id: 'sub', type: 'lowshelf', freq: 35, gain: -0.3, q: 0.71, enabled: true },
+                    { id: 'low', type: 'peaking', freq: 110, gain: 0.3, q: 1.2, enabled: true },
+                    { id: 'low_mid', type: 'peaking', freq: 320, gain: -0.4, q: 1.5, enabled: true },
+                    { id: 'mid', type: 'peaking', freq: 1200, gain: 0.0, q: 1.4, enabled: true },
+                    { id: 'high_mid', type: 'peaking', freq: 3400, gain: 0.3, q: 1.6, enabled: true },
+                    { id: 'presence', type: 'peaking', freq: 7500, gain: 0.4, q: 1.3, enabled: true },
+                    { id: 'air', type: 'highshelf', freq: 13000, gain: 0.6, q: 0.71, enabled: true }
                 ]
             },
             master_compressor: {
+                bypassed: false,
                 threshold: -14.0,
-                ratio: 1.8,
-                attack: 40.0,
-                release: 220.0,
-                knee: 8.0,
-                makeup: 0.8,
-                mix: 90.0
-            },
-            tube_saturator: {
-                drive: 32.0,
-                warmth: 75.0,
-                mix: 65.0,
-                outputGain: -0.5
-            },
-            stereo_imager: {
-                width: 105.0,
-                monoBassFreq: 140.0 // Strict vinyl mono sub
+                ratio: 1.3,
+                attack: 35.0,
+                release: 120.0,
+                knee: 6.0,
+                makeup: 0.3,
+                mix: 75.0
             },
             lookahead_limiter: {
+                bypassed: false,
+                ceiling: -1.0,
+                release: 90.0,
+                softClip: false,
+                drive: 0.8
+            }
+        }
+    },
+
+    {
+        id: 'edm_club_punch',
+        name: '2. Club & Festival EDM Impact (-9.0 LUFS)',
+        category: 'Electronic & Dance',
+        description: 'High-energy club loudness with punch and clarity. Engages 3 units: Parametric EQ (tight sub shelf & air), Transient Shaper (controlled kick snap), and True-Peak Limiter with soft-clipping.',
+        targetLufs: -9.0,
+        settings: {
+            parametric_eq: {
+                bypassed: false,
+                matchAmount: 0.8,
+                smoothing: 0.5,
+                bands: [
+                    { id: 'sub', type: 'lowshelf', freq: 45, gain: 0.6, q: 0.71, enabled: true },
+                    { id: 'low', type: 'peaking', freq: 100, gain: 0.4, q: 1.4, enabled: true },
+                    { id: 'low_mid', type: 'peaking', freq: 280, gain: -0.5, q: 1.6, enabled: true },
+                    { id: 'mid', type: 'peaking', freq: 1000, gain: 0.0, q: 1.4, enabled: true },
+                    { id: 'high_mid', type: 'peaking', freq: 3000, gain: 0.4, q: 1.4, enabled: true },
+                    { id: 'presence', type: 'peaking', freq: 6500, gain: 0.5, q: 1.4, enabled: true },
+                    { id: 'air', type: 'highshelf', freq: 12000, gain: 0.7, q: 0.71, enabled: true }
+                ]
+            },
+            transient_shaper: {
+                bypassed: false,
+                attack: 0.4,
+                sustain: -0.2,
+                speed: 28.0,
+                outputGain: 0.0,
+                mix: 60.0
+            },
+            lookahead_limiter: {
+                bypassed: false,
+                ceiling: -0.3,
+                release: 75.0,
+                softClip: true,
+                drive: 1.6
+            }
+        }
+    },
+
+    {
+        id: 'hiphop_trap_heat',
+        name: '3. Modern 808 Trap & Hip-Hop (-9.5 LUFS)',
+        category: 'Hip-Hop & Trap',
+        description: 'Tight 808 sub control and vocal clarity. Engages 3 units: Parametric EQ (mud notch at 320 Hz, vocal air), Multiband Compressor (tightening sub band only, others flat), and Peak Limiter.',
+        targetLufs: -9.5,
+        settings: {
+            parametric_eq: {
+                bypassed: false,
+                matchAmount: 0.8,
+                smoothing: 0.5,
+                bands: [
+                    { id: 'sub', type: 'lowshelf', freq: 40, gain: 0.6, q: 0.71, enabled: true },
+                    { id: 'low', type: 'peaking', freq: 90, gain: 0.3, q: 1.3, enabled: true },
+                    { id: 'low_mid', type: 'peaking', freq: 320, gain: -0.6, q: 1.6, enabled: true },
+                    { id: 'mid', type: 'peaking', freq: 1100, gain: 0.0, q: 1.4, enabled: true },
+                    { id: 'high_mid', type: 'peaking', freq: 3200, gain: 0.4, q: 1.4, enabled: true },
+                    { id: 'presence', type: 'peaking', freq: 7000, gain: 0.5, q: 1.3, enabled: true },
+                    { id: 'air', type: 'highshelf', freq: 13500, gain: 0.7, q: 0.71, enabled: true }
+                ]
+            },
+            multiband_compressor: {
+                bypassed: false,
+                crossoverLow: 120,
+                crossoverMid: 1200,
+                crossoverHigh: 6500,
+                channelMode: 'stereo',
+                bands: [
+                    { threshold: -15, ratio: 1.6, attack: 30, release: 80, makeup: 0.2, bypass: false },
+                    { threshold: -14, ratio: 1.0, attack: 20, release: 70, makeup: 0.0, bypass: true },
+                    { threshold: -14, ratio: 1.0, attack: 15, release: 60, makeup: 0.0, bypass: true },
+                    { threshold: -15, ratio: 1.0, attack: 10, release: 50, makeup: 0.0, bypass: true }
+                ]
+            },
+            lookahead_limiter: {
+                bypassed: false,
+                ceiling: -0.5,
+                release: 80.0,
+                softClip: true,
+                drive: 1.6
+            }
+        }
+    },
+
+    {
+        id: 'vintage_70s_tape',
+        name: '4. Vintage 70s Analog Tape & Tube (-12.0 LUFS)',
+        category: 'Vintage Analog',
+        description: 'Authentic 15 IPS master tape warmth without phase flanging or pitch flutter. Engages 2 units: Analog Master Tape Machine (1.5 dB saturation, 55 Hz head-bump) and clean Peak Limiter.',
+        targetLufs: -12.0,
+        settings: {
+            analog_tape: {
+                bypassed: false,
+                speed: '15_ips',
+                drive: 1.5,
+                headBump: 0.4,
+                flutter: 0.0,
+                transformer: 12.0,
+                bias: 0.0,
+                mix: 100.0
+            },
+            lookahead_limiter: {
+                bypassed: false,
+                ceiling: -0.6,
+                release: 100.0,
+                softClip: true,
+                drive: 1.0
+            }
+        }
+    },
+
+    {
+        id: 'lofi_nostalgia',
+        name: '5. 90s Lo-Fi Boom Bap & Vinyl Grit (-13.0 LUFS)',
+        category: 'Lo-Fi & Vintage',
+        description: 'Warm vintage beat tone. Engages 3 units: Parametric EQ (smooth vintage high-frequency roll-off), Analog Tube Warmth (gentle 2nd harmonic richness), and Peak Limiter.',
+        targetLufs: -13.0,
+        settings: {
+            parametric_eq: {
+                bypassed: false,
+                matchAmount: 0.7,
+                smoothing: 0.6,
+                bands: [
+                    { id: 'sub', type: 'lowshelf', freq: 40, gain: -0.5, q: 0.71, enabled: true },
+                    { id: 'low', type: 'peaking', freq: 110, gain: 0.5, q: 1.3, enabled: true },
+                    { id: 'low_mid', type: 'peaking', freq: 350, gain: 0.3, q: 1.4, enabled: true },
+                    { id: 'mid', type: 'peaking', freq: 1000, gain: 0.3, q: 1.3, enabled: true },
+                    { id: 'high_mid', type: 'peaking', freq: 2800, gain: 0.0, q: 1.3, enabled: true },
+                    { id: 'presence', type: 'peaking', freq: 6000, gain: -0.4, q: 1.2, enabled: true },
+                    { id: 'air', type: 'highshelf', freq: 11000, gain: -0.9, q: 0.71, enabled: true }
+                ]
+            },
+            tube_saturator: {
+                bypassed: false,
+                drive: 1.8,
+                warmth: 15.0,
+                mix: 20.0,
+                outputGain: 0.0
+            },
+            lookahead_limiter: {
+                bypassed: false,
                 ceiling: -0.8,
+                release: 110.0,
+                softClip: true,
+                drive: 1.0
+            }
+        }
+    },
+
+    {
+        id: 'synthwave_neon',
+        name: '6. Synthwave & Cyberpunk 80s Neon (-10.0 LUFS)',
+        category: 'Electronic & Synth',
+        description: '80s retro synth space with grounded low end. Engages 3 units: Stereo Imager (112% width, mono bass under 95Hz), Parametric EQ (shimmering presence), and Peak Limiter.',
+        targetLufs: -10.0,
+        settings: {
+            parametric_eq: {
+                bypassed: false,
+                matchAmount: 0.8,
+                smoothing: 0.55,
+                bands: [
+                    { id: 'sub', type: 'lowshelf', freq: 45, gain: 0.4, q: 0.71, enabled: true },
+                    { id: 'low', type: 'peaking', freq: 120, gain: 0.3, q: 1.3, enabled: true },
+                    { id: 'low_mid', type: 'peaking', freq: 380, gain: -0.4, q: 1.6, enabled: true },
+                    { id: 'mid', type: 'peaking', freq: 1100, gain: 0.0, q: 1.4, enabled: true },
+                    { id: 'high_mid', type: 'peaking', freq: 3500, gain: 0.4, q: 1.5, enabled: true },
+                    { id: 'presence', type: 'peaking', freq: 7000, gain: 0.6, q: 1.3, enabled: true },
+                    { id: 'air', type: 'highshelf', freq: 12500, gain: 0.8, q: 0.71, enabled: true }
+                ]
+            },
+            stereo_imager: {
+                bypassed: false,
+                width: 112.0,
+                monoBassFreq: 95.0
+            },
+            lookahead_limiter: {
+                bypassed: false,
+                ceiling: -0.4,
+                release: 80.0,
+                softClip: true,
+                drive: 1.5
+            }
+        }
+    },
+
+    {
+        id: 'acoustic_vocal',
+        name: '7. Acoustic & Intimate Vocal Air (-15.0 LUFS)',
+        category: 'Acoustic & Folk',
+        description: 'Pure organic acoustic dynamics without harshness. Engages 3 units: Dynamic De-Harsh (gentle vocal glare control), Opto Compressor (smooth LA-2A leveling), and clean Peak Limiter (-1.0 dBTP ceiling).',
+        targetLufs: -15.0,
+        settings: {
+            dynamic_deharsh: {
+                bypassed: false,
+                targetFreq: 6200.0,
+                threshold: -16.0,
+                reduction: 1.2,
+                q: 1.6,
+                mix: 80.0
+            },
+            opto_compressor: {
+                bypassed: false,
+                reduction: 25.0,
+                emphasis: 40.0,
+                speed: 'slow',
+                mix: 65.0
+            },
+            lookahead_limiter: {
+                bypassed: false,
+                ceiling: -1.0,
                 release: 120.0,
+                softClip: false,
+                drive: 0.5
+            }
+        }
+    },
+
+    {
+        id: 'rock_metal_wall',
+        name: '8. Rock & Metal Wall-of-Sound (-9.5 LUFS)',
+        category: 'Rock & Metal',
+        description: 'Punchy rock glue and guitar bite. Engages 3 units: VCA Master Compressor (1.5:1 punchy bus glue), Parametric EQ (snare presence and guitar bite), and Peak Limiter with soft-clipping.',
+        targetLufs: -9.5,
+        settings: {
+            parametric_eq: {
+                bypassed: false,
+                matchAmount: 0.8,
+                smoothing: 0.5,
+                bands: [
+                    { id: 'sub', type: 'lowshelf', freq: 40, gain: 0.4, q: 0.71, enabled: true },
+                    { id: 'low', type: 'peaking', freq: 110, gain: 0.5, q: 1.4, enabled: true },
+                    { id: 'low_mid', type: 'peaking', freq: 400, gain: -0.6, q: 1.8, enabled: true },
+                    { id: 'mid', type: 'peaking', freq: 1200, gain: 0.3, q: 1.4, enabled: true },
+                    { id: 'high_mid', type: 'peaking', freq: 2600, gain: 0.6, q: 1.5, enabled: true },
+                    { id: 'presence', type: 'peaking', freq: 5000, gain: 0.4, q: 1.4, enabled: true },
+                    { id: 'air', type: 'highshelf', freq: 11000, gain: 0.6, q: 0.71, enabled: true }
+                ]
+            },
+            master_compressor: {
+                bypassed: false,
+                threshold: -14.0,
+                ratio: 1.5,
+                attack: 28.0,
+                release: 110.0,
+                knee: 6.0,
+                makeup: 0.4,
+                mix: 75.0
+            },
+            lookahead_limiter: {
+                bypassed: false,
+                ceiling: -0.4,
+                release: 75.0,
                 softClip: true,
                 drive: 1.8
             }
         }
     },
+
     {
-        id: 'acoustic_vocal_clarity',
-        name: 'Acoustic & Vocal Intimacy',
-        category: 'Acoustic / Jazz',
-        description: 'Maximum dynamic transparency, natural vocal breath, wide open soundstage, and zero squashing.',
+        id: 'ambient_cinematic',
+        name: '9. Deep Ambient & Cinematic Space (-16.0 LUFS)',
+        category: 'Cinematic & Ambient',
+        description: 'Widescreen acoustic field and subtle hall depth. Engages 3 units: Stereo Imager (115% width, mono bass under 80Hz), Studio Reverb (3.5% subtle dimensional air), and clean Peak Limiter.',
+        targetLufs: -16.0,
         settings: {
-            parametric_eq: {
-                matchAmount: 0.8,
-                smoothing: 0.6,
-                bands: [
-                    { id: 'sub', type: 'lowshelf', freq: 40, gain: -1.0, q: 0.71, enabled: true },
-                    { id: 'low', type: 'peaking', freq: 140, gain: 0.0, q: 1.4, enabled: true },
-                    { id: 'low_mid', type: 'peaking', freq: 300, gain: -0.8, q: 1.6, enabled: true },
-                    { id: 'mid', type: 'peaking', freq: 1500, gain: 0.5, q: 1.4, enabled: true },
-                    { id: 'high_mid', type: 'peaking', freq: 3800, gain: 1.2, q: 1.5, enabled: true },
-                    { id: 'presence', type: 'peaking', freq: 8000, gain: 1.0, q: 1.2, enabled: true },
-                    { id: 'air', type: 'highshelf', freq: 13500, gain: 1.5, q: 0.71, enabled: true }
-                ]
-            },
-            multiband_compressor: {
-                crossoverLow: 100,
-                crossoverMid: 1000,
-                crossoverHigh: 5000,
-                channelMode: 'stereo',
-                bands: [
-                    { threshold: -14, ratio: 1.5, attack: 40, release: 150, makeup: 0.2, bypass: false },
-                    { threshold: -12, ratio: 1.4, attack: 30, release: 110, makeup: 0.1, bypass: false },
-                    { threshold: -13, ratio: 1.4, attack: 22, release: 90, makeup: 0.2, bypass: false },
-                    { threshold: -14, ratio: 1.5, attack: 15, release: 70, makeup: 0.3, bypass: false }
-                ]
-            },
-            master_compressor: {
-                threshold: -12.0,
-                ratio: 1.5,
-                attack: 50.0,
-                release: 250.0,
-                knee: 10.0,
-                makeup: 0.5,
-                mix: 70.0
-            },
-            tube_saturator: {
-                drive: 6.0,
-                warmth: 20.0,
-                mix: 25.0,
-                outputGain: 0.0
+            studio_reverb: {
+                bypassed: false,
+                size: 50.0,
+                decay: 1.4,
+                predelay: 25.0,
+                damping: 5500.0,
+                width: 115.0,
+                mix: 3.5
             },
             stereo_imager: {
-                width: 120.0,
+                bypassed: false,
+                width: 115.0,
                 monoBassFreq: 80.0
             },
             lookahead_limiter: {
+                bypassed: false,
                 ceiling: -1.0,
-                release: 110.0,
+                release: 130.0,
                 softClip: false,
+                drive: 0.5
+            }
+        }
+    },
+
+    {
+        id: 'motown_soul',
+        name: '10. Motown & R&B Soul Warmth (-12.0 LUFS)',
+        category: 'Soul & R&B',
+        description: 'Classic console warmth and silky optical leveling. Engages 3 units: Parametric EQ (warm lows and vocal presence), Opto Compressor (smooth optical control), and Peak Limiter.',
+        targetLufs: -12.0,
+        settings: {
+            parametric_eq: {
+                bypassed: false,
+                matchAmount: 0.7,
+                smoothing: 0.6,
+                bands: [
+                    { id: 'sub', type: 'lowshelf', freq: 40, gain: 0.0, q: 0.71, enabled: true },
+                    { id: 'low', type: 'peaking', freq: 130, gain: 0.5, q: 1.3, enabled: true },
+                    { id: 'low_mid', type: 'peaking', freq: 400, gain: 0.3, q: 1.4, enabled: true },
+                    { id: 'mid', type: 'peaking', freq: 1100, gain: 0.5, q: 1.3, enabled: true },
+                    { id: 'high_mid', type: 'peaking', freq: 2800, gain: 0.4, q: 1.4, enabled: true },
+                    { id: 'presence', type: 'peaking', freq: 6000, gain: 0.0, q: 1.2, enabled: true },
+                    { id: 'air', type: 'highshelf', freq: 12500, gain: -0.5, q: 0.71, enabled: true }
+                ]
+            },
+            opto_compressor: {
+                bypassed: false,
+                reduction: 30.0,
+                emphasis: 40.0,
+                speed: 'slow',
+                mix: 70.0
+            },
+            lookahead_limiter: {
+                bypassed: false,
+                ceiling: -0.6,
+                release: 100.0,
+                softClip: true,
                 drive: 1.2
             }
         }
     },
+
     {
-        id: 'heavy_rock_punch',
-        name: 'Rock & Metal Wall-of-Sound',
-        category: 'Rock / Metal',
-        description: 'Driving mid-frequency guitar cut, aggressive snare crack, tight kick transient glue, and maximum loudness density.',
+        id: 'studer_a800_master',
+        name: '11. Studer A800 1/2-Inch Master Tape (-12.0 LUFS)',
+        category: 'Vintage Analog',
+        description: 'Studer A800 1/2" 2-track master tape deck. Engages 3 units: Analog Master Tape Machine (15 IPS, 0.4 dB head bump, transformer iron glue), gentle Parametric EQ (smooth air), and Peak Limiter.',
+        targetLufs: -12.0,
         settings: {
+            analog_tape: {
+                bypassed: false,
+                speed: '15_ips',
+                drive: 1.5,
+                headBump: 0.4,
+                flutter: 0.0,
+                transformer: 15.0,
+                bias: 0.0,
+                mix: 100.0
+            },
             parametric_eq: {
-                matchAmount: 1.1,
-                smoothing: 0.45,
+                bypassed: false,
+                matchAmount: 0.7,
+                smoothing: 0.6,
                 bands: [
-                    { id: 'sub', type: 'lowshelf', freq: 40, gain: 1.0, q: 0.71, enabled: true },
-                    { id: 'low', type: 'peaking', freq: 110, gain: 1.5, q: 1.4, enabled: true },
-                    { id: 'low_mid', type: 'peaking', freq: 400, gain: -1.8, q: 1.8, enabled: true },
-                    { id: 'mid', type: 'peaking', freq: 1200, gain: 0.6, q: 1.4, enabled: true },
-                    { id: 'high_mid', type: 'peaking', freq: 2600, gain: 1.8, q: 1.5, enabled: true },
-                    { id: 'presence', type: 'peaking', freq: 5000, gain: 1.2, q: 1.4, enabled: true },
-                    { id: 'air', type: 'highshelf', freq: 11000, gain: 1.8, q: 0.71, enabled: true }
+                    { id: 'sub', type: 'lowshelf', freq: 40, gain: 0.0, q: 0.71, enabled: true },
+                    { id: 'low', type: 'peaking', freq: 110, gain: 0.3, q: 1.3, enabled: true },
+                    { id: 'low_mid', type: 'peaking', freq: 350, gain: -0.3, q: 1.4, enabled: true },
+                    { id: 'mid', type: 'peaking', freq: 1000, gain: 0.0, q: 1.2, enabled: true },
+                    { id: 'high_mid', type: 'peaking', freq: 3200, gain: 0.3, q: 1.3, enabled: true },
+                    { id: 'presence', type: 'peaking', freq: 6500, gain: 0.2, q: 1.2, enabled: true },
+                    { id: 'air', type: 'highshelf', freq: 14000, gain: 0.5, q: 0.71, enabled: true }
                 ]
-            },
-            multiband_compressor: {
-                crossoverLow: 130,
-                crossoverMid: 1200,
-                crossoverHigh: 5500,
-                channelMode: 'stereo',
-                bands: [
-                    { threshold: -20, ratio: 3.0, attack: 22, release: 90, makeup: 1.2, bypass: false },
-                    { threshold: -17, ratio: 2.2, attack: 18, release: 75, makeup: 0.6, bypass: false },
-                    { threshold: -16, ratio: 2.2, attack: 14, release: 65, makeup: 0.8, bypass: false },
-                    { threshold: -18, ratio: 2.5, attack: 10, release: 50, makeup: 1.0, bypass: false }
-                ]
-            },
-            master_compressor: {
-                threshold: -18.0,
-                ratio: 2.8,
-                attack: 18.0,
-                release: 110.0,
-                knee: 4.0,
-                makeup: 1.8,
-                mix: 90.0
-            },
-            tube_saturator: {
-                drive: 28.0,
-                warmth: 50.0,
-                mix: 60.0,
-                outputGain: 0.0
-            },
-            stereo_imager: {
-                width: 115.0,
-                monoBassFreq: 100.0
             },
             lookahead_limiter: {
-                ceiling: -0.4,
-                release: 70.0,
+                bypassed: false,
+                ceiling: -0.6,
+                release: 95.0,
                 softClip: true,
-                drive: 4.8
+                drive: 1.2
+            }
+        }
+    },
+
+    {
+        id: 'abbey_chamber_air',
+        name: '12. Abbey Acoustic Chamber & Vocal Air (-15.0 LUFS)',
+        category: 'Acoustic & Classical',
+        description: 'Delicate chamber space & anti-glare for acoustic tracks. Engages 3 units: Dynamic De-Harsh (taming upper-mid glare), Studio Reverb (4.0% subtle chamber depth), and clean Peak Limiter (-1.0 dBTP ceiling).',
+        targetLufs: -15.0,
+        settings: {
+            dynamic_deharsh: {
+                bypassed: false,
+                targetFreq: 5600.0,
+                threshold: -17.0,
+                reduction: 1.2,
+                q: 1.5,
+                mix: 85.0
+            },
+            studio_reverb: {
+                bypassed: false,
+                size: 50.0,
+                decay: 1.4,
+                predelay: 25.0,
+                damping: 6000.0,
+                width: 110.0,
+                mix: 4.0
+            },
+            lookahead_limiter: {
+                bypassed: false,
+                ceiling: -1.0,
+                release: 110.0,
+                softClip: false,
+                drive: 0.6
             }
         }
     }
 ];
 
-const STORAGE_KEY = 'aura_master_custom_presets_v1';
+const STORAGE_KEY = 'mestre_custom_presets_v1';
+const LEGACY_STORAGE_KEY = 'aura_master_custom_presets_v1';
 
 export class PresetManager {
     static getPresets() {
@@ -364,7 +488,7 @@ export class PresetManager {
 
     static getCustomPresets() {
         try {
-            const data = localStorage.getItem(STORAGE_KEY);
+            const data = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
             return data ? JSON.parse(data) : [];
         } catch (_) {
             return [];
@@ -376,7 +500,10 @@ export class PresetManager {
         const currentSettings = {};
 
         for (const mod of rack.modules) {
-            currentSettings[mod.type] = JSON.parse(JSON.stringify(mod.params));
+            currentSettings[mod.type] = {
+                bypassed: !!mod.bypassed,
+                ...JSON.parse(JSON.stringify(mod.params))
+            };
         }
 
         const custom = {
@@ -384,6 +511,7 @@ export class PresetManager {
             name: name.trim(),
             category: 'User Custom',
             description: 'User saved custom mastering chain profile.',
+            targetLufs: -14.0,
             settings: currentSettings,
             timestamp: new Date().toISOString()
         };
@@ -409,19 +537,93 @@ export class PresetManager {
     static applyPreset(preset, rack) {
         if (!preset || !preset.settings || !rack) return false;
 
-        for (const [modType, params] of Object.entries(preset.settings)) {
-            const targetMod = rack.modules.find(m => m.type === modType);
-            if (targetMod) {
-                rack.setModuleParams(targetMod.id, params);
+        const isCleanFlat = preset.id === 'initial_clean_bypass';
+
+        // 1. Configure and engage ONLY the modules specified by this preset
+        for (const mod of rack.modules) {
+            const params = preset.settings[mod.type];
+            if (params && !isCleanFlat) {
+                const shouldBypass = params.bypassed !== undefined ? !!params.bypassed : false;
+                rack.setModuleBypass(mod.id, shouldBypass);
+                rack.setModuleParams(mod.id, params);
+            } else {
+                // Module is NOT part of this preset's sound design -> BYPASS IT!
+                rack.setModuleBypass(mod.id, true);
+            }
+        }
+
+        // 2. For creative presets, auto-add any active modules specified in preset if not currently in rack
+        if (!isCleanFlat) {
+            for (const [modType, params] of Object.entries(preset.settings)) {
+                if (params && params.bypassed === false) {
+                    const exists = rack.modules.some(m => m.type === modType);
+                    if (!exists) {
+                        const limIdx = rack.modules.findIndex(m => m.type === 'lookahead_limiter');
+                        const insertIdx = limIdx !== -1 ? limIdx : null;
+                        const newMod = rack.addModule(modType, insertIdx, params);
+                        if (newMod) {
+                            rack.setModuleBypass(newMod.id, false);
+                            rack.setModuleParams(newMod.id, params);
+                        }
+                    }
+                }
             }
         }
         return true;
     }
 
+    static exportSinglePreset(preset) {
+        const payload = {
+            format: 'mestre-preset',
+            version: '2.5',
+            exportedAt: new Date().toISOString(),
+            preset
+        };
+        const str = JSON.stringify(payload, null, 2);
+        const blob = new Blob([str], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const sanitized = preset.name.replace(/[^a-zA-Z0-9_-]/g, '_');
+        a.download = `${sanitized}.mestre-preset`;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }, 1000);
+    }
+
+    static importPresetFile(jsonStr) {
+        try {
+            const data = JSON.parse(jsonStr);
+            const p = data.preset || data;
+            if (p && p.name && p.settings) {
+                const custom = {
+                    id: p.id || `imported_${Date.now()}`,
+                    name: p.name.includes('(Imported)') ? p.name : `${p.name} (Imported)`,
+                    category: p.category || 'Imported Presets',
+                    description: p.description || 'Imported Mestre custom preset.',
+                    targetLufs: p.targetLufs || -14.0,
+                    settings: p.settings,
+                    timestamp: new Date().toISOString()
+                };
+
+                const list = this.getCustomPresets();
+                list.push(custom);
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+                return custom;
+            }
+        } catch (err) {
+            console.error('[PresetManager] Error importing preset file:', err);
+        }
+        return null;
+    }
+
     static exportPresetsAsJson() {
         const custom = this.getCustomPresets();
         const exportObj = {
-            app: 'AURA Master',
+            app: 'Mestre',
             version: '2.5',
             exportedAt: new Date().toISOString(),
             customPresets: custom

@@ -45,46 +45,55 @@ export class ModularMasteringRack {
         // Module 3: VCA Master Compressor
         this.addModule('master_compressor', null, {
             name: 'VCA Master Compressor',
-            threshold: -16.0,
-            ratio: 2.5,
-            attack: 25.0,
-            release: 150.0,
+            threshold: -14.0,
+            ratio: 1.5,
+            attack: 30.0,
+            release: 120.0,
             knee: 6.0,
-            makeup: 1.0,
+            makeup: 0.5,
             mix: 100.0
         });
 
         // Module 4: Tube Saturation & Warmth
         this.addModule('tube_saturator', null, {
             name: 'Analog Tube Warmth',
-            drive: 15.0,
-            warmth: 40.0,
-            mix: 50.0,
+            drive: 3.0,
+            warmth: 20.0,
+            mix: 25.0,
             outputGain: 0.0
         });
 
         // Module 5: Stereo Imager & Mono Bass
         this.addModule('stereo_imager', null, {
             name: 'Stereo Imager & Widener',
-            width: 115.0, // 115% width
+            width: 110.0, // 110% width
             monoBassFreq: 90.0 // Mono under 90Hz
         });
 
         // Module 6: Lookahead Brickwall Peak Limiter
         this.addModule('lookahead_limiter', null, {
             name: 'Brickwall True-Peak Limiter',
-            ceiling: -0.2,
-            release: 80.0,
+            ceiling: -0.5,
+            release: 85.0,
             softClip: true,
             drive: 0.0
         });
+
+        // Initialize all default processors in bypassed mode so user tracks load cleanly and without distortion!
+        for (const mod of this.modules) {
+            mod.bypassed = true;
+            if (mod.dryGain && mod.wetGain) {
+                mod.dryGain.gain.value = 1.0;
+                mod.wetGain.gain.value = 0.0;
+            }
+        }
 
         this.reconnectChain();
     }
 
     /**
      * Add a processor module to the chain
-     * @param {'parametric_eq' | 'multiband_compressor' | 'master_compressor' | 'opto_compressor' | 'tube_saturator' | 'stereo_imager' | 'lookahead_limiter'} type 
+     * @param {'parametric_eq' | 'multiband_compressor' | 'master_compressor' | 'opto_compressor' | 'tube_saturator' | 'analog_tape' | 'studio_reverb' | 'transient_shaper' | 'dynamic_deharsh' | 'stereo_imager' | 'lookahead_limiter'} type 
      * @param {number|null} index Position in chain, or null for end
      * @param {Object} initialParams 
      * @returns {Object} Created module descriptor
@@ -108,6 +117,18 @@ export class ModularMasteringRack {
                 break;
             case 'tube_saturator':
                 moduleObj = this.createTubeSaturatorModule(id, initialParams);
+                break;
+            case 'analog_tape':
+                moduleObj = this.createAnalogTapeModule(id, initialParams);
+                break;
+            case 'studio_reverb':
+                moduleObj = this.createStudioReverbModule(id, initialParams);
+                break;
+            case 'transient_shaper':
+                moduleObj = this.createTransientShaperModule(id, initialParams);
+                break;
+            case 'dynamic_deharsh':
+                moduleObj = this.createDynamicDeharshModule(id, initialParams);
                 break;
             case 'stereo_imager':
                 moduleObj = this.createStereoImagerModule(id, initialParams);
@@ -179,6 +200,83 @@ export class ModularMasteringRack {
         const mod = this.modules.find(m => m.id === moduleId);
         if (!mod || !mod.setParam) return;
         mod.setParam(paramName, value);
+    }
+
+    setModuleParams(moduleId, paramsObj) {
+        const mod = this.modules.find(m => m.id === moduleId);
+        if (!mod || !paramsObj) return;
+
+        if (paramsObj.bypassed !== undefined) {
+            this.setModuleBypass(moduleId, paramsObj.bypassed);
+        }
+
+        for (const [key, val] of Object.entries(paramsObj)) {
+            if (key === 'bypassed') continue;
+            if (key === 'bands') {
+                if (mod.type === 'parametric_eq') {
+                    mod.setParam('allBands', val);
+                } else if (mod.type === 'multiband_compressor') {
+                    mod.setParam('allBands', val);
+                }
+            } else if (mod.setParam) {
+                mod.setParam(key, val);
+            }
+        }
+    }
+
+    /**
+     * Export complete rack state snapshot for Undo/Redo and Presets
+     */
+    exportState() {
+        return {
+            modules: this.modules.map(mod => ({
+                id: mod.id,
+                type: mod.type,
+                title: mod.title,
+                bypassed: !!mod.bypassed,
+                params: JSON.parse(JSON.stringify(mod.params))
+            }))
+        };
+    }
+
+    /**
+     * Restore complete rack state snapshot
+     */
+    importState(state) {
+        if (!state || !Array.isArray(state.modules)) return false;
+
+        const canUpdateInPlace = this.modules.length === state.modules.length &&
+            this.modules.every((m, i) => m.type === state.modules[i].type);
+
+        if (canUpdateInPlace) {
+            state.modules.forEach((saved, i) => {
+                const current = this.modules[i];
+                current.title = saved.title || current.title;
+                this.setModuleBypass(current.id, saved.bypassed);
+                this.setModuleParams(current.id, saved.params);
+            });
+        } else {
+            // Structural change: disconnect old chain, rebuild according to state
+            for (const m of this.modules) {
+                try {
+                    m.input.disconnect();
+                    m.output.disconnect();
+                } catch (_) {}
+            }
+            this.modules = [];
+
+            for (const saved of state.modules) {
+                const newMod = this.addModule(saved.type, null, saved.params);
+                if (newMod) {
+                    if (saved.id) newMod.id = saved.id;
+                    if (saved.title) newMod.title = saved.title;
+                    this.setModuleBypass(newMod.id, saved.bypassed);
+                    this.setModuleParams(newMod.id, saved.params);
+                }
+            }
+            this.reconnectChain();
+        }
+        return true;
     }
 
     updateModuleBypassGains(mod) {
@@ -604,6 +702,17 @@ export class ModularMasteringRack {
                 const dry = 1.0 - wet;
                 wetGain.gain.setTargetAtTime(wet, now, 0.02);
                 dryGain.gain.setTargetAtTime(dry, now, 0.02);
+            } else if (paramName === 'allBands' && Array.isArray(value)) {
+                for (let i = 0; i < Math.min(bandObjects.length, value.length); i++) {
+                    const b = value[i];
+                    if (b.threshold !== undefined) setParam('bandThreshold', { bandIndex: i, threshold: b.threshold });
+                    if (b.ratio !== undefined) setParam('bandRatio', { bandIndex: i, ratio: b.ratio });
+                    if (b.attack !== undefined) setParam('bandAttack', { bandIndex: i, attack: b.attack });
+                    if (b.release !== undefined) setParam('bandRelease', { bandIndex: i, release: b.release });
+                    if (b.makeup !== undefined) setParam('bandMakeup', { bandIndex: i, makeup: b.makeup });
+                    if (b.solo !== undefined) setParam('bandSolo', { bandIndex: i, solo: b.solo });
+                    if (b.bypassed !== undefined) setParam('bandBypass', { bandIndex: i, bypassed: b.bypassed });
+                }
             }
         };
 
@@ -716,30 +825,36 @@ export class ModularMasteringRack {
 
         const params = {
             name: initialParams.name || 'Analog Tube Warmth',
-            drive: initialParams.drive !== undefined ? initialParams.drive : 15.0, // 0 to 60 dB drive
-            warmth: initialParams.warmth !== undefined ? initialParams.warmth : 40.0, // 0 to 100 harmonics
+            drive: initialParams.drive !== undefined ? initialParams.drive : 5.0, // 0 to 30 dB drive
+            warmth: initialParams.warmth !== undefined ? initialParams.warmth : 25.0, // 0 to 100 harmonics
             outputGain: initialParams.outputGain !== undefined ? initialParams.outputGain : 0.0,
-            mix: initialParams.mix !== undefined ? initialParams.mix : 50.0
+            mix: initialParams.mix !== undefined ? initialParams.mix : 35.0
         };
 
         const updateCurve = (warmthFactor) => {
             const n_samples = 4096;
             const curve = new Float32Array(n_samples);
-            const k = 1.0 + (warmthFactor / 100.0) * 3.0;
+            const w = Math.max(0, Math.min(1.0, warmthFactor / 100.0));
 
             for (let i = 0; i < n_samples; ++i) {
                 const x = (i * 2) / n_samples - 1;
-                // Soft tube saturation: tanh style polynomial with subtle 2nd harmonic warmth
-                const y = Math.tanh(k * x) + 0.08 * (warmthFactor / 100.0) * (x * x - 0.25);
-                curve[i] = Math.max(-1.0, Math.min(1.0, y));
+                // Mastering-grade soft saturation: continuous smooth polynomial with subtle 2nd harmonic warmth
+                // Pure C1 continuity without hard clipping corners or square-wave distortion
+                const normX = Math.max(-1.0, Math.min(1.0, x));
+                const y = (normX + w * 0.15 * normX * Math.abs(normX)) / (1.0 + Math.abs(normX) * 0.2);
+                curve[i] = Math.max(-1.0, Math.min(1.0, y * 0.95));
             }
             shaper.curve = curve;
             shaper.oversample = '4x';
         };
 
         updateCurve(params.warmth);
-        preGain.gain.value = Math.pow(10.0, params.drive / 35.0);
-        postGain.gain.value = Math.pow(10.0, (params.outputGain - params.drive * 0.4) / 20.0);
+        // Drive scaling calibrated for gentle mastering saturation (max +4dB input drive, not +15dB!)
+        const calcPreGain = (d) => 1.0 + (Math.max(0, d) / 30.0) * 0.65;
+        const calcPostGain = (d, outG) => Math.pow(10.0, (outG - (d * 0.08)) / 20.0);
+
+        preGain.gain.value = calcPreGain(params.drive);
+        postGain.gain.value = calcPostGain(params.drive, params.outputGain);
 
         dryGain.gain.value = 1.0 - (params.mix / 100.0);
         wetGain.gain.value = params.mix / 100.0;
@@ -748,12 +863,12 @@ export class ModularMasteringRack {
             const now = this.ctx.currentTime;
             params[paramName] = value;
             if (paramName === 'drive') {
-                preGain.gain.setTargetAtTime(Math.pow(10.0, value / 35.0), now, 0.02);
-                postGain.gain.setTargetAtTime(Math.pow(10.0, (params.outputGain - value * 0.4) / 20.0), now, 0.02);
+                preGain.gain.setTargetAtTime(calcPreGain(value), now, 0.02);
+                postGain.gain.setTargetAtTime(calcPostGain(value, params.outputGain), now, 0.02);
             } else if (paramName === 'warmth') {
                 updateCurve(value);
             } else if (paramName === 'outputGain') {
-                postGain.gain.setTargetAtTime(Math.pow(10.0, (value - params.drive * 0.4) / 20.0), now, 0.02);
+                postGain.gain.setTargetAtTime(calcPostGain(params.drive, value), now, 0.02);
             } else if (paramName === 'mix') {
                 const wet = value / 100.0;
                 dryGain.gain.setTargetAtTime(1.0 - wet, now, 0.02);
@@ -770,6 +885,7 @@ export class ModularMasteringRack {
             output,
             dryGain,
             wetGain,
+            shaperNode: shaper,
             params,
             setParam
         };
@@ -966,6 +1082,518 @@ export class ModularMasteringRack {
             params,
             setParam,
             getReduction: () => fastLimiter.reduction
+        };
+    }
+
+    createStudioReverbModule(id, initialParams) {
+        const input = this.ctx.createGain();
+        const output = this.ctx.createGain();
+        const dryGain = this.ctx.createGain();
+        const wetGain = this.ctx.createGain();
+
+        input.connect(dryGain);
+        dryGain.connect(output);
+
+        // Pre-highpass filter (cuts below ~140 Hz to protect mastering low end)
+        const preHp = this.ctx.createBiquadFilter();
+        preHp.type = 'highpass';
+        preHp.frequency.value = 140.0;
+        preHp.Q.value = 0.707;
+
+        // Pre-delay line
+        const preDelay = this.ctx.createDelay(0.5);
+        preDelay.delayTime.value = (initialParams.predelay !== undefined ? initialParams.predelay : 20.0) / 1000.0;
+
+        // High-fidelity Convolution Engine (Zero recursive runaway feedback possible!)
+        const convolver = this.ctx.createConvolver();
+
+        // Stereo widener matrix
+        const splitter = this.ctx.createChannelSplitter(2);
+        const merger = this.ctx.createChannelMerger(2);
+        const widthL = this.ctx.createGain();
+        const widthR = this.ctx.createGain();
+        const widthVal = (initialParams.width !== undefined ? initialParams.width : 110.0) / 100.0;
+        widthL.gain.value = widthVal;
+        widthR.gain.value = widthVal;
+
+        input.connect(preHp);
+        preHp.connect(preDelay);
+        preDelay.connect(convolver);
+        convolver.connect(splitter);
+
+        splitter.connect(widthL, 0);
+        splitter.connect(widthR, 1);
+        widthL.connect(merger, 0, 0);
+        widthR.connect(merger, 0, 1);
+
+        merger.connect(wetGain);
+        wetGain.connect(output);
+
+        const params = {
+            name: initialParams.name || 'Studio Acoustic Reverb',
+            size: initialParams.size !== undefined ? initialParams.size : 50.0, // 10 to 100 %
+            decay: initialParams.decay !== undefined ? initialParams.decay : 1.6, // 0.3 to 4.0 s
+            predelay: initialParams.predelay !== undefined ? initialParams.predelay : 20.0, // ms
+            damping: initialParams.damping !== undefined ? initialParams.damping : 6500.0, // Hz
+            width: initialParams.width !== undefined ? initialParams.width : 110.0, // %
+            mix: initialParams.mix !== undefined ? initialParams.mix : 10.0 // %
+        };
+
+        const generateImpulse = (size, decay, damping) => {
+            const rate = this.ctx.sampleRate || 44100;
+            const duration = Math.max(0.2, Math.min(3.5, decay));
+            const length = Math.floor(rate * duration);
+            const impulse = this.ctx.createBuffer(2, length, rate);
+            const left = impulse.getChannelData(0);
+            const right = impulse.getChannelData(1);
+
+            const decayConstant = 4.0 / duration; // Smooth decay envelope
+            const dampCutoff = Math.max(1200, Math.min(18000, damping));
+            const dampAlpha = Math.exp(-2.0 * Math.PI * (dampCutoff / rate));
+
+            let lpL = 0;
+            let lpR = 0;
+
+            const sizeScale = Math.max(0.3, Math.min(1.8, size / 50.0));
+
+            // Early reflection clusters (Schroeder room distribution)
+            const earlyTaps = [
+                { time: 0.009, gainL: 0.40, gainR: 0.22 },
+                { time: 0.016, gainL: -0.32, gainR: 0.38 },
+                { time: 0.024, gainL: 0.28, gainR: -0.29 },
+                { time: 0.035, gainL: -0.22, gainR: 0.25 },
+                { time: 0.048, gainL: 0.18, gainR: -0.20 },
+                { time: 0.065, gainL: -0.14, gainR: 0.16 }
+            ];
+
+            for (const tap of earlyTaps) {
+                const idx = Math.floor(tap.time * sizeScale * rate);
+                if (idx < length) {
+                    left[idx] += tap.gainL;
+                    right[idx] += tap.gainR;
+                }
+            }
+
+            // Diffuse reverberation tail with exponential decay and HF damping
+            for (let i = 0; i < length; i++) {
+                const t = i / rate;
+                const env = Math.exp(-t * decayConstant);
+
+                const nL = (Math.random() * 2 - 1) * env * 0.3;
+                const nR = (Math.random() * 2 - 1) * env * 0.3;
+
+                lpL = nL * (1 - dampAlpha) + lpL * dampAlpha;
+                lpR = nR * (1 - dampAlpha) + lpR * dampAlpha;
+
+                left[i] += lpL;
+                right[i] += lpR;
+            }
+
+            return impulse;
+        };
+
+        // Initialize impulse buffer
+        convolver.buffer = generateImpulse(params.size, params.decay, params.damping);
+
+        const wet = params.mix / 100.0;
+        dryGain.gain.value = 1.0 - wet;
+        wetGain.gain.value = wet;
+
+        let regenTimeout = null;
+        const queueImpulseRegen = () => {
+            if (regenTimeout) clearTimeout(regenTimeout);
+            regenTimeout = setTimeout(() => {
+                try {
+                    convolver.buffer = generateImpulse(params.size, params.decay, params.damping);
+                } catch (_) {}
+            }, 60);
+        };
+
+        const setParam = (paramName, value) => {
+            const now = this.ctx.currentTime;
+            params[paramName] = value;
+            if (paramName === 'predelay') {
+                preDelay.delayTime.setTargetAtTime(Math.max(0.001, value / 1000.0), now, 0.02);
+            } else if (paramName === 'damping' || paramName === 'size' || paramName === 'decay') {
+                queueImpulseRegen();
+            } else if (paramName === 'width') {
+                const w = value / 100.0;
+                widthL.gain.setTargetAtTime(w, now, 0.02);
+                widthR.gain.setTargetAtTime(w, now, 0.02);
+            } else if (paramName === 'mix') {
+                const w = value / 100.0;
+                dryGain.gain.setTargetAtTime(1.0 - w, now, 0.02);
+                wetGain.gain.setTargetAtTime(w, now, 0.02);
+            }
+        };
+
+        return {
+            id,
+            type: 'studio_reverb',
+            title: params.name,
+            bypassed: false,
+            input,
+            output,
+            dryGain,
+            wetGain,
+            convolverNode: convolver,
+            params,
+            setParam
+        };
+    }
+
+    createAnalogTapeModule(id, initialParams) {
+        const input = this.ctx.createGain();
+        const output = this.ctx.createGain();
+        const dryGain = this.ctx.createGain();
+        const wetGain = this.ctx.createGain();
+
+        // BASE DELAY COMPENSATION FOR PERFECT PHASE COHERENCE
+        // Delaying both wet and dry paths by the exact same 2ms prevents comb-filtering / flanging when mix < 100%
+        const BASE_DELAY = 0.002; // 2 milliseconds
+        const dryDelay = this.ctx.createDelay(0.05);
+        dryDelay.delayTime.value = BASE_DELAY;
+
+        input.connect(dryDelay);
+        dryDelay.connect(dryGain);
+        dryGain.connect(output);
+
+        const inputDriveGain = this.ctx.createGain();
+        const tapeShaper = this.ctx.createWaveShaper();
+        const headBumpFilter = this.ctx.createBiquadFilter();
+        const speedHighFilter = this.ctx.createBiquadFilter();
+        const tapeBiasFilter = this.ctx.createBiquadFilter();
+        const flutterDelayL = this.ctx.createDelay(0.05);
+        const flutterDelayR = this.ctx.createDelay(0.05);
+        const flutterGain = this.ctx.createGain();
+        const outputTrimGain = this.ctx.createGain();
+
+        // 1. Head Bump filter (Playback head resonance, positioned AFTER saturation to avoid intermodulation mud)
+        headBumpFilter.type = 'peaking';
+        headBumpFilter.frequency.value = 55.0;
+        headBumpFilter.Q.value = 0.85; // Musical wide Q, non-resonant
+        headBumpFilter.gain.value = initialParams.headBump !== undefined ? initialParams.headBump : 0.4;
+
+        // 2. Speed High-Shelf filter
+        speedHighFilter.type = 'highshelf';
+        speedHighFilter.frequency.value = 14000.0;
+        speedHighFilter.gain.value = 0.0;
+
+        // 3. Tape Bias peaking filter
+        tapeBiasFilter.type = 'peaking';
+        tapeBiasFilter.frequency.value = 10000.0;
+        tapeBiasFilter.Q.value = 0.8;
+        tapeBiasFilter.gain.value = initialParams.bias !== undefined ? initialParams.bias : 0.0;
+
+        // 4. Modulated Wow & Flutter LFO (Studer / Ampex ultra-tight mastering deck specs: <0.015% WRMS)
+        const lfo1 = this.ctx.createOscillator();
+        const lfo2 = this.ctx.createOscillator();
+        const lfoGain1 = this.ctx.createGain();
+        const lfoGain2 = this.ctx.createGain();
+        lfo1.type = 'sine';
+        lfo1.frequency.value = 0.5; // Capstan rotation drift
+        lfo2.type = 'triangle';
+        lfo2.frequency.value = 3.2; // Tape scrape flutter
+        lfoGain1.gain.value = 0.000010; // 10 microseconds max modulation at 100% flutter
+        lfoGain2.gain.value = 0.000003; // 3 microseconds max
+        lfo1.connect(lfoGain1);
+        lfo2.connect(lfoGain2);
+        lfoGain1.connect(flutterGain);
+        lfoGain2.connect(flutterGain);
+
+        flutterDelayL.delayTime.value = BASE_DELAY;
+        flutterDelayR.delayTime.value = BASE_DELAY;
+        flutterGain.connect(flutterDelayL.delayTime);
+        flutterGain.connect(flutterDelayR.delayTime);
+        try {
+            lfo1.start();
+            lfo2.start();
+        } catch (_) {}
+
+        // Mastering Tape Saturation Curve:
+        // Pure analog tape compression: perfectly linear across 85% of dynamic range,
+        // rounding smoothly on peak transients above -3 dBFS with warm 3rd harmonic compression.
+        const updateTapeCurves = (driveVal, transformerVal) => {
+            const n = 4096;
+            const tapeCurve = new Float32Array(n);
+            // driveVal: 0 to 18 dB. Normal mastering setting: 1 to 3 dB.
+            const driveAmount = (Math.max(0, driveVal) / 18.0);
+            const satStrength = driveAmount * 0.28; // Gentle mastering tape compression
+            const xfmrWarmth = (Math.max(0, transformerVal) / 100.0) * 0.012;
+
+            for (let i = 0; i < n; i++) {
+                const x = (i * 2) / n - 1; // -1 to +1
+                // Soft cubic-quintic tape compression curve with exact unity slope at zero
+                const y = x - satStrength * (0.24 * Math.pow(x, 3) - 0.04 * Math.pow(x, 5));
+                // Subtle transformer core even-order harmonic (warmth)
+                const y2 = y + xfmrWarmth * (1.0 - Math.pow(x, 2)) * Math.sign(x);
+                tapeCurve[i] = Math.max(-1.0, Math.min(1.0, y2));
+            }
+            tapeShaper.curve = tapeCurve;
+            tapeShaper.oversample = '4x';
+        };
+
+        const updateSpeedSettings = (speed) => {
+            const now = this.ctx.currentTime;
+            if (speed === '30_ips') {
+                speedHighFilter.gain.setTargetAtTime(0.3, now, 0.02);
+                headBumpFilter.frequency.setTargetAtTime(68.0, now, 0.02);
+            } else if (speed === '7.5_ips') {
+                speedHighFilter.gain.setTargetAtTime(-0.8, now, 0.02);
+                headBumpFilter.frequency.setTargetAtTime(45.0, now, 0.02);
+            } else {
+                // 15_ips default
+                speedHighFilter.gain.setTargetAtTime(0.0, now, 0.02);
+                headBumpFilter.frequency.setTargetAtTime(55.0, now, 0.02);
+            }
+        };
+
+        const params = {
+            name: initialParams.name || 'Analog Master Tape Machine',
+            speed: initialParams.speed || '15_ips', // '30_ips' | '15_ips' | '7.5_ips'
+            drive: initialParams.drive !== undefined ? initialParams.drive : 1.5, // dB (0 to 18)
+            headBump: initialParams.headBump !== undefined ? initialParams.headBump : 0.4, // dB (0 to 4)
+            flutter: initialParams.flutter !== undefined ? initialParams.flutter : 0.0, // % (0 to 100, default 0 for clean mastering deck)
+            transformer: initialParams.transformer !== undefined ? initialParams.transformer : 15.0, // % (0 to 100)
+            bias: initialParams.bias !== undefined ? initialParams.bias : 0.0, // dB (-3 to +3)
+            mix: initialParams.mix !== undefined ? initialParams.mix : 100.0 // % (100% tape insert)
+        };
+
+        updateTapeCurves(params.drive, params.transformer);
+        updateSpeedSettings(params.speed);
+
+        inputDriveGain.gain.value = 1.0;
+        outputTrimGain.gain.value = 1.0;
+        flutterGain.gain.value = params.flutter / 100.0;
+
+        // Routing:
+        // Input -> InputDrive -> TapeShaper -> HeadBump -> SpeedHigh -> TapeBias -> Stereo Split -> Flutter Delays -> Merge -> OutputTrim -> WetGain -> Output
+        const splitter = this.ctx.createChannelSplitter(2);
+        const merger = this.ctx.createChannelMerger(2);
+
+        input.connect(inputDriveGain);
+        inputDriveGain.connect(tapeShaper);
+        tapeShaper.connect(headBumpFilter);
+        headBumpFilter.connect(speedHighFilter);
+        speedHighFilter.connect(tapeBiasFilter);
+
+        tapeBiasFilter.connect(splitter);
+        splitter.connect(flutterDelayL, 0);
+        splitter.connect(flutterDelayR, 1);
+        flutterDelayL.connect(merger, 0, 0);
+        flutterDelayR.connect(merger, 0, 1);
+
+        merger.connect(outputTrimGain);
+        outputTrimGain.connect(wetGain);
+        wetGain.connect(output);
+
+        dryGain.gain.value = 1.0 - (params.mix / 100.0);
+        wetGain.gain.value = params.mix / 100.0;
+
+        const setParam = (paramName, value) => {
+            const now = this.ctx.currentTime;
+            params[paramName] = value;
+            if (paramName === 'drive') {
+                updateTapeCurves(value, params.transformer);
+            } else if (paramName === 'speed') {
+                updateSpeedSettings(value);
+            } else if (paramName === 'headBump') {
+                headBumpFilter.gain.setTargetAtTime(value, now, 0.02);
+            } else if (paramName === 'flutter') {
+                flutterGain.gain.setTargetAtTime(value / 100.0, now, 0.02);
+            } else if (paramName === 'transformer') {
+                updateTapeCurves(params.drive, value);
+            } else if (paramName === 'bias') {
+                tapeBiasFilter.gain.setTargetAtTime(value, now, 0.02);
+            } else if (paramName === 'mix') {
+                const wet = value / 100.0;
+                dryGain.gain.setTargetAtTime(1.0 - wet, now, 0.02);
+                wetGain.gain.setTargetAtTime(wet, now, 0.02);
+            }
+        };
+
+        return {
+            id,
+            type: 'analog_tape',
+            title: params.name,
+            bypassed: false,
+            input,
+            output,
+            dryGain,
+            wetGain,
+            params,
+            setParam
+        };
+    }
+
+    createTransientShaperModule(id, initialParams) {
+        const input = this.ctx.createGain();
+        const output = this.ctx.createGain();
+        const dryGain = this.ctx.createGain();
+        const wetGain = this.ctx.createGain();
+
+        input.connect(dryGain);
+        dryGain.connect(output);
+
+        // Fast envelope follower (transients) vs Slow envelope (sustain body)
+        const fastComp = this.ctx.createDynamicsCompressor();
+        fastComp.threshold.value = -24.0;
+        fastComp.ratio.value = 4.0;
+        fastComp.attack.value = 0.002;
+        fastComp.release.value = 0.030;
+
+        const attackGainNode = this.ctx.createGain();
+        const sustainGainNode = this.ctx.createGain();
+        const outTrim = this.ctx.createGain();
+
+        const focusFilter = this.ctx.createBiquadFilter();
+        focusFilter.type = 'highpass';
+        focusFilter.frequency.value = 75.0;
+
+        input.connect(focusFilter);
+        focusFilter.connect(fastComp);
+
+        const attackBranch = this.ctx.createGain();
+        input.connect(attackBranch);
+        attackBranch.connect(attackGainNode);
+
+        const sustainBranch = this.ctx.createGain();
+        fastComp.connect(sustainBranch);
+        sustainBranch.connect(sustainGainNode);
+
+        const sumBus = this.ctx.createGain();
+        attackGainNode.connect(sumBus);
+        sustainGainNode.connect(sumBus);
+        sumBus.connect(outTrim);
+        outTrim.connect(wetGain);
+        wetGain.connect(output);
+
+        const params = {
+            name: initialParams.name || 'Master Transient Shaper',
+            attack: initialParams.attack !== undefined ? initialParams.attack : 1.5, // dB (-6 to +6)
+            sustain: initialParams.sustain !== undefined ? initialParams.sustain : -0.5, // dB (-6 to +6)
+            speed: initialParams.speed !== undefined ? initialParams.speed : 30.0, // ms (10 to 100)
+            outputGain: initialParams.outputGain !== undefined ? initialParams.outputGain : 0.0, // dB
+            mix: initialParams.mix !== undefined ? initialParams.mix : 100.0 // %
+        };
+
+        attackGainNode.gain.value = Math.pow(10, params.attack / 20.0);
+        sustainGainNode.gain.value = Math.pow(10, params.sustain / 20.0);
+        outTrim.gain.value = Math.pow(10, params.outputGain / 20.0);
+        dryGain.gain.value = 1.0 - (params.mix / 100.0);
+        wetGain.gain.value = params.mix / 100.0;
+
+        const setParam = (paramName, value) => {
+            const now = this.ctx.currentTime;
+            params[paramName] = value;
+            if (paramName === 'attack') {
+                attackGainNode.gain.setTargetAtTime(Math.pow(10, value / 20.0), now, 0.02);
+            } else if (paramName === 'sustain') {
+                sustainGainNode.gain.setTargetAtTime(Math.pow(10, value / 20.0), now, 0.02);
+            } else if (paramName === 'speed') {
+                fastComp.release.setTargetAtTime(Math.max(0.01, value / 1000.0), now, 0.02);
+            } else if (paramName === 'outputGain') {
+                outTrim.gain.setTargetAtTime(Math.pow(10, value / 20.0), now, 0.02);
+            } else if (paramName === 'mix') {
+                const wet = value / 100.0;
+                dryGain.gain.setTargetAtTime(1.0 - wet, now, 0.02);
+                wetGain.gain.setTargetAtTime(wet, now, 0.02);
+            }
+        };
+
+        return {
+            id,
+            type: 'transient_shaper',
+            title: params.name,
+            bypassed: false,
+            input,
+            output,
+            dryGain,
+            wetGain,
+            params,
+            setParam
+        };
+    }
+
+    createDynamicDeharshModule(id, initialParams) {
+        const input = this.ctx.createGain();
+        const output = this.ctx.createGain();
+        const dryGain = this.ctx.createGain();
+        const wetGain = this.ctx.createGain();
+
+        input.connect(dryGain);
+        dryGain.connect(output);
+
+        // Audio path dynamic notch filter
+        const deharshFilter = this.ctx.createBiquadFilter();
+        deharshFilter.type = 'peaking';
+        deharshFilter.frequency.value = initialParams.targetFreq !== undefined ? initialParams.targetFreq : 4500.0;
+        deharshFilter.Q.value = initialParams.q !== undefined ? initialParams.q : 1.8;
+        deharshFilter.gain.value = -(initialParams.reduction !== undefined ? initialParams.reduction : 3.5);
+
+        // Sidechain detector
+        const sidechainBandpass = this.ctx.createBiquadFilter();
+        sidechainBandpass.type = 'bandpass';
+        sidechainBandpass.frequency.value = deharshFilter.frequency.value;
+        sidechainBandpass.Q.value = deharshFilter.Q.value;
+
+        const sidechainComp = this.ctx.createDynamicsCompressor();
+        sidechainComp.threshold.value = initialParams.threshold !== undefined ? initialParams.threshold : -18.0;
+        sidechainComp.ratio.value = 8.0;
+        sidechainComp.attack.value = 0.003;
+        sidechainComp.release.value = 0.040;
+
+        input.connect(deharshFilter);
+        deharshFilter.connect(wetGain);
+        wetGain.connect(output);
+
+        input.connect(sidechainBandpass);
+        sidechainBandpass.connect(sidechainComp);
+
+        const params = {
+            name: initialParams.name || 'Dynamic Resonance De-Harsh',
+            targetFreq: initialParams.targetFreq !== undefined ? initialParams.targetFreq : 4500.0, // 2000 to 10000 Hz
+            threshold: initialParams.threshold !== undefined ? initialParams.threshold : -18.0, // dB
+            reduction: initialParams.reduction !== undefined ? initialParams.reduction : 3.5, // dB (0 to 12)
+            q: initialParams.q !== undefined ? initialParams.q : 1.8,
+            mix: initialParams.mix !== undefined ? initialParams.mix : 100.0
+        };
+
+        dryGain.gain.value = 0.0;
+        wetGain.gain.value = 1.0;
+
+        const setParam = (paramName, value) => {
+            const now = this.ctx.currentTime;
+            params[paramName] = value;
+            if (paramName === 'targetFreq') {
+                deharshFilter.frequency.setTargetAtTime(value, now, 0.02);
+                sidechainBandpass.frequency.setTargetAtTime(value, now, 0.02);
+            } else if (paramName === 'q') {
+                deharshFilter.Q.setTargetAtTime(value, now, 0.02);
+                sidechainBandpass.Q.setTargetAtTime(value, now, 0.02);
+            } else if (paramName === 'reduction') {
+                deharshFilter.gain.setTargetAtTime(-Math.abs(value), now, 0.02);
+            } else if (paramName === 'threshold') {
+                sidechainComp.threshold.setTargetAtTime(value, now, 0.02);
+            } else if (paramName === 'mix') {
+                const wet = value / 100.0;
+                dryGain.gain.setTargetAtTime(1.0 - wet, now, 0.02);
+                wetGain.gain.setTargetAtTime(wet, now, 0.02);
+            }
+        };
+
+        return {
+            id,
+            type: 'dynamic_deharsh',
+            title: params.name,
+            bypassed: false,
+            input,
+            output,
+            dryGain,
+            wetGain,
+            params,
+            setParam,
+            getReduction: () => sidechainComp.reduction
         };
     }
 

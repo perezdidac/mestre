@@ -1,7 +1,7 @@
 {
-  "name": "mastering-reference-match",
+  "name": "mestre",
   "version": "1.0.0",
-  "description": "Client-side browser-based audio mastering suite with Reference Match DSP Engine",
+  "description": "Mestre — Client-side browser-based audio mastering suite with Reference Match DSP Engine",
   "type": "module",
   "scripts": {
     "dev": "vite",

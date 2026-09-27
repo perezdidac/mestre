@@ -101,22 +101,32 @@
 }
 
 .btn-eq-preset {
-    font-size: 11px;
-    font-weight: 600;
-    padding: 4px 10px;
-    border-radius: var(--pill-radius);
-    background: var(--bg-secondary);
-    border: 1px solid var(--border-subtle);
-    color: var(--text-secondary);
+    width: 96px;
+    height: 26px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+    border-radius: var(--control-radius);
+    background: #0d121f;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #94a3b8;
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
     cursor: pointer;
     transition: all var(--transition-fast);
+    white-space: nowrap;
+    box-sizing: border-box;
+    flex-shrink: 0;
 }
 
 .btn-eq-preset:hover {
-    background: var(--color-target);
-    color: #ffffff;
-    border-color: var(--color-target);
-    box-shadow: 0 2px 8px var(--color-target-glow);
+    background: #1e2638;
+    color: #f8fafc;
+    border-color: rgba(255, 255, 255, 0.28);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
 }
 
 .eq-plot-canvas-container {
@@ -572,59 +582,66 @@
 
 .scope-tabs {
     display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
+    gap: 4px;
 }
 
 .scope-tab {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 8px;
-    padding: 7px 14px;
-    border-radius: 6px;
-    background: rgba(15, 23, 42, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    width: 185px;
+    height: 34px;
+    border-radius: var(--control-radius);
+    background: #090d16;
+    border: 1px solid rgba(255, 255, 255, 0.12);
     color: #94a3b8;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 700;
+    letter-spacing: 0.04em;
     cursor: pointer;
     transition: all var(--transition-fast);
+    box-sizing: border-box;
+    white-space: nowrap;
 }
 
 .scope-tab:hover {
     color: #f8fafc;
     border-color: rgba(6, 182, 212, 0.4);
-    background: rgba(30, 41, 59, 0.8);
+    background: #111726;
 }
 
 .scope-tab.active {
-    background: linear-gradient(135deg, rgba(6, 182, 212, 0.25) 0%, rgba(2, 132, 199, 0.2) 100%);
-    border-color: #06b6d4;
+    background: linear-gradient(180deg, #111a2d 0%, #0c1220 100%);
+    border-color: #00f0ff;
     color: #00f0ff;
-    box-shadow: 0 0 15px rgba(6, 182, 212, 0.3);
+    box-shadow: inset 0 1px 0 rgba(0, 240, 255, 0.2), 0 0 10px rgba(0, 240, 255, 0.2);
 }
 
 .btn-scope-split {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 6px;
-    padding: 6px 12px;
-    border-radius: 6px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    width: 136px;
+    height: 34px;
+    border-radius: var(--control-radius);
+    background: #090d16;
+    border: 1px solid rgba(255, 255, 255, 0.14);
     color: #cbd5e1;
     font-size: 11px;
     font-weight: 700;
     cursor: pointer;
     transition: all var(--transition-fast);
+    box-sizing: border-box;
+    white-space: nowrap;
 }
 
 .btn-scope-split:hover,
 .btn-scope-split.active {
-    background: rgba(16, 185, 129, 0.2);
+    background: rgba(16, 185, 129, 0.15);
     border-color: #10b981;
     color: #10b981;
-    box-shadow: 0 0 12px rgba(16, 185, 129, 0.35);
 }
 
 /* Dual Split View Container */

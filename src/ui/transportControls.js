@@ -127,12 +127,21 @@ export class TransportControls {
         }
 
         // Parameter Sliders
+        const attachCommitOnRelease = (slider, name) => {
+            if (slider) {
+                slider.addEventListener('change', () => {
+                    this.callbacks.onCommitChange?.(`Transport: ${name}`);
+                });
+            }
+        };
+
         if (this.sliderMatchAmount) {
             this.sliderMatchAmount.addEventListener('input', (e) => {
                 const pct = parseInt(e.target.value, 10);
                 this.valMatchAmount.textContent = `${pct}%`;
                 this.callbacks.onMatchAmountChange(pct / 100);
             });
+            attachCommitOnRelease(this.sliderMatchAmount, 'Match Amount');
         }
 
         if (this.sliderSmoothing) {
@@ -141,6 +150,7 @@ export class TransportControls {
                 this.valSmoothing.textContent = `${pct}%`;
                 this.callbacks.onSmoothingChange(pct / 100);
             });
+            attachCommitOnRelease(this.sliderSmoothing, 'Curve Smoothing');
         }
 
         if (this.sliderInputGain) {
@@ -149,6 +159,7 @@ export class TransportControls {
                 this.valInputGain.textContent = `${db > 0 ? '+' : ''}${db.toFixed(1)}\u00A0dB`;
                 this.callbacks.onInputGainChange(db);
             });
+            attachCommitOnRelease(this.sliderInputGain, 'Input Gain');
         }
 
         if (this.sliderCompThresh) {
@@ -157,6 +168,7 @@ export class TransportControls {
                 this.valCompThresh.textContent = `${db.toFixed(1)}\u00A0dB`;
                 this.triggerDynamicsUpdate();
             });
+            attachCommitOnRelease(this.sliderCompThresh, 'Compressor Threshold');
         }
 
         if (this.sliderCompRatio) {
@@ -165,6 +177,7 @@ export class TransportControls {
                 this.valCompRatio.textContent = `${ratio.toFixed(1)}:1`;
                 this.triggerDynamicsUpdate();
             });
+            attachCommitOnRelease(this.sliderCompRatio, 'Compressor Ratio');
         }
 
         if (this.sliderLimiterCeil) {
@@ -173,6 +186,7 @@ export class TransportControls {
                 this.valLimiterCeil.textContent = `${db.toFixed(1)}\u00A0dB`;
                 this.callbacks.onLimiterChange(db);
             });
+            attachCommitOnRelease(this.sliderLimiterCeil, 'Limiter Ceiling');
         }
 
         // Export Modal
@@ -259,14 +273,18 @@ export class TransportControls {
 
     updateTimecode(currentSec, totalSec) {
         if (!this.timecodeDisplay) return;
-        const curM = Math.floor(currentSec / 60);
-        const curS = Math.floor(currentSec % 60).toString().padStart(2, '0');
-        const curMs = Math.floor((currentSec % 1) * 100).toString().padStart(2, '0');
+        const safeCur = Number.isFinite(currentSec) ? Math.max(0, currentSec) : 0;
+        const safeTot = Number.isFinite(totalSec) ? Math.max(0, totalSec) : 0;
 
-        const totM = Math.floor(totalSec / 60);
-        const totS = Math.floor(totalSec % 60).toString().padStart(2, '0');
+        const curM = Math.floor(safeCur / 60).toString().padStart(2, '0');
+        const curS = Math.floor(safeCur % 60).toString().padStart(2, '0');
+        const curMs = Math.floor((safeCur % 1) * 100).toString().padStart(2, '0');
 
-        this.timecodeDisplay.textContent = `${curM}:${curS}.${curMs} / ${totM}:${totS}`;
+        const totM = Math.floor(safeTot / 60).toString().padStart(2, '0');
+        const totS = Math.floor(safeTot % 60).toString().padStart(2, '0');
+        const totMs = Math.floor((safeTot % 1) * 100).toString().padStart(2, '0');
+
+        this.timecodeDisplay.textContent = `${curM}:${curS}.${curMs} / ${totM}:${totS}.${totMs}`;
     }
 
     snapSlidersToMatchedValues(params) {

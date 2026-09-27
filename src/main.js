@@ -11,6 +11,7 @@ import { MatchEngine } from './dsp/matchEngine.js';
 import { OfflineMasteringRenderer } from './dsp/offlineRenderer.js';
 import { WavExporter } from './audio/wavExporter.js';
 import { PresetManager, MASTERING_PRESETS } from './dsp/masteringPresets.js';
+import { HistoryManager } from './dsp/historyManager.js';
 
 import { WaveformView } from './ui/waveformView.js';
 import { SpectrumView } from './ui/spectrumView.js';
@@ -21,6 +22,7 @@ import { ModularRackView } from './ui/modularRackView.js';
 import { VectorscopeView } from './ui/vectorscopeView.js';
 import { LoudnessRadarView } from './ui/loudnessRadarView.js';
 import { QualityInspectorView } from './ui/qualityInspector.js';
+import { ThemeManager } from './ui/themeManager.js';
 
 class MasteringApp {
     constructor() {
@@ -39,31 +41,51 @@ class MasteringApp {
         this.loudnessRadarView = null;
         this.qualityInspector = null;
 
+        // Initialize Undo/Redo Engine
+        this.historyManager = new HistoryManager(this.audioMgr.rack, {
+            onHistoryChange: (historyState) => {
+                this.updateHistoryUi(historyState);
+            },
+            onStateRestored: (description) => {
+                this.updateVisualizersFromRack();
+                if (this.modularRackView) this.modularRackView.render();
+            }
+        });
+
         this.initUi();
+        this.historyManager.initBaseline('Initial Clean State');
         this.initDropZones();
         this.setupAnimationLoop();
     }
 
     initUi() {
-        // Theme Switcher (Bright Studio vs Dark Console)
-        const btnThemeToggle = document.getElementById('btn-theme-toggle');
-        const iconTheme = document.getElementById('theme-toggle-icon');
-        const labelTheme = document.getElementById('theme-toggle-label');
-        let isDark = true;
-        if (btnThemeToggle) {
-            btnThemeToggle.addEventListener('click', () => {
-                isDark = !isDark;
-                if (isDark) {
-                    document.documentElement.setAttribute('data-theme', 'dark');
-                    if (iconTheme) iconTheme.textContent = '🌙';
-                    if (labelTheme) labelTheme.textContent = 'Dark Console';
-                } else {
-                    document.documentElement.removeAttribute('data-theme');
-                    if (iconTheme) iconTheme.textContent = '☀️';
-                    if (labelTheme) labelTheme.textContent = 'Studio Bright';
-                }
+        // 10 UI Themes (5 Dark & 5 Night Modes)
+        ThemeManager.init();
+        const selectTheme = document.getElementById('select-ui-theme');
+        if (selectTheme) {
+            selectTheme.value = ThemeManager.getCurrentThemeId();
+            selectTheme.addEventListener('change', (e) => {
+                ThemeManager.applyTheme(e.target.value);
             });
         }
+        this.initThemeGalleryModal();
+
+        // Listen for theme changes to dynamically update waveform visualizers
+        window.addEventListener('mestre-theme-change', (e) => {
+            const { theme } = e.detail;
+            if (this.targetWaveform) {
+                this.targetWaveform.options.waveColor = theme.swatches.target;
+                this.targetWaveform.options.rmsColor = `${theme.swatches.target}73`;
+                this.targetWaveform.options.progressColor = `${theme.swatches.target}33`;
+                this.targetWaveform.draw();
+            }
+            if (this.refWaveform) {
+                this.refWaveform.options.waveColor = theme.swatches.ref;
+                this.refWaveform.options.rmsColor = `${theme.swatches.ref}73`;
+                this.refWaveform.options.progressColor = `${theme.swatches.ref}33`;
+                this.refWaveform.draw();
+            }
+        });
 
         // Waveform views
         const canvasTarget = document.getElementById('canvas-target-waveform');
@@ -192,9 +214,15 @@ class MasteringApp {
 
         // Interactive EQ Plot
         const canvasEq = document.getElementById('canvas-eq-plot');
-        this.eqPlotView = new EqPlotView(canvasEq, (bandIndex, bandData) => {
-            this.handleManualBandEdit(bandIndex, bandData);
-        });
+        this.eqPlotView = new EqPlotView(
+            canvasEq,
+            (bandIndex, bandData) => {
+                this.handleManualBandEdit(bandIndex, bandData);
+            },
+            (description) => {
+                this.historyManager.pushSnapshot(description);
+            }
+        );
 
         // Meter bridge
         const metersContainer = document.getElementById('meters-section-container');
@@ -209,7 +237,12 @@ class MasteringApp {
                 },
                 onParamChanged: (modId, param, val) => {
                     this.updateVisualizersFromRack();
-                }
+                },
+                onCommitChange: (description) => {
+                    this.historyManager.pushSnapshot(description);
+                },
+                onUndo: () => this.historyManager.undo(),
+                onRedo: () => this.historyManager.redo()
             });
         }
 
@@ -228,7 +261,10 @@ class MasteringApp {
             onInputGainChange: (gain) => this.handleInputGainChange(gain),
             onCompressorChange: (thresh, ratio) => this.handleCompressorChange(thresh, ratio),
             onLimiterChange: (ceil) => this.handleLimiterChange(ceil),
-            onExportMaster: (bitDepth, dither) => this.handleExportMaster(bitDepth, dither)
+            onExportMaster: (bitDepth, dither) => this.handleExportMaster(bitDepth, dither),
+            onCommitChange: (description) => {
+                this.historyManager.pushSnapshot(description);
+            }
         });
 
         // Sync Audio Manager playback updates (decoupled Target vs Reference waveforms)
@@ -283,7 +319,13 @@ class MasteringApp {
         });
 
         // Initialize Master Pre-Flight Quality Inspector
-        this.qualityInspector = new QualityInspectorView(this.audioMgr, this.audioMgr.rack);
+        this.qualityInspector = new QualityInspectorView(this.audioMgr, this.audioMgr.rack, {
+            onAutoFixApplied: (description) => {
+                this.historyManager.pushSnapshot(description);
+                this.updateVisualizersFromRack();
+                if (this.modularRackView) this.modularRackView.render();
+            }
+        });
         const btnOpenQuality = document.getElementById('btn-open-quality-inspector');
         if (btnOpenQuality) {
             btnOpenQuality.addEventListener('click', () => {
@@ -291,8 +333,16 @@ class MasteringApp {
             });
         }
 
-        // Initialize Master Presets Dropdown
+        // Header Global Undo & Redo Buttons
+        const btnHeaderUndo = document.getElementById('btn-undo');
+        const btnHeaderRedo = document.getElementById('btn-redo');
+        if (btnHeaderUndo) btnHeaderUndo.addEventListener('click', () => this.historyManager.undo());
+        if (btnHeaderRedo) btnHeaderRedo.addEventListener('click', () => this.historyManager.redo());
+
+        // Initialize Master Presets Dropdown & Hub
         this.initPresetDropdown();
+        this.initPresetHub();
+        this.initModuleHelpModal();
 
         // Spectrum Target Reference Curve Selector
         const selectTargetCurve = document.getElementById('select-target-curve');
@@ -384,19 +434,11 @@ class MasteringApp {
                     if (this.modularRackView) this.modularRackView.render();
 
                     // Notify audioManager about estimated target LUFS for Auto-Gain Match
-                    if (presetId === 'streaming_standard') {
-                        this.audioMgr.setMasteredLufs(-14.0);
-                    } else if (presetId === 'edm_club_punch') {
-                        this.audioMgr.setMasteredLufs(-8.0);
-                    } else if (presetId === 'hiphop_trap_warmth') {
-                        this.audioMgr.setMasteredLufs(-9.5);
-                    } else if (presetId === 'vintage_analog_vinyl') {
-                        this.audioMgr.setMasteredLufs(-12.0);
-                    } else if (presetId === 'acoustic_vocal_clarity') {
-                        this.audioMgr.setMasteredLufs(-16.0);
-                    } else if (presetId === 'heavy_rock_punch') {
-                        this.audioMgr.setMasteredLufs(-9.0);
+                    if (targetPreset.targetLufs !== undefined) {
+                        this.audioMgr.setMasteredLufs(targetPreset.targetLufs);
                     }
+
+                    this.historyManager.pushSnapshot(`Preset: ${targetPreset.name}`);
                 }
             });
         }
@@ -411,6 +453,281 @@ class MasteringApp {
                     alert(`Custom mastering preset "${name.trim()}" saved to local storage!`);
                 }
             });
+        }
+    }
+
+    initPresetHub() {
+        const modal = document.getElementById('preset-hub-modal');
+        const btnOpen = document.getElementById('btn-open-preset-hub');
+        const btnClose = document.getElementById('btn-close-preset-hub');
+        const cardsGrid = document.getElementById('preset-cards-grid');
+        const btnExportCurrent = document.getElementById('btn-hub-export-current');
+        const btnImportFile = document.getElementById('btn-hub-import-file');
+        const inputPresetFile = document.getElementById('input-preset-file');
+        const btnExportAll = document.getElementById('btn-hub-export-all');
+
+        if (!modal) return;
+
+        const openHub = () => {
+            renderHubCards();
+            modal.classList.add('visible');
+        };
+
+        const closeHub = () => {
+            modal.classList.remove('visible');
+        };
+
+        if (btnOpen) btnOpen.addEventListener('click', openHub);
+        if (btnClose) btnClose.addEventListener('click', closeHub);
+
+        const renderHubCards = () => {
+            if (!cardsGrid) return;
+            cardsGrid.innerHTML = '';
+
+            const allPresets = [
+                ...MASTERING_PRESETS,
+                ...PresetManager.getCustomPresets()
+            ];
+
+            allPresets.forEach(preset => {
+                const card = document.createElement('div');
+                card.className = 'preset-card-item';
+                const isCustom = String(preset.id).startsWith('custom_') || String(preset.id).startsWith('imported_');
+                card.innerHTML = `
+                    <div class="preset-card-top">
+                        <div class="preset-card-meta">
+                            <span class="preset-category-tag">${preset.category || 'Creative'}</span>
+                            <span class="preset-lufs-badge">${preset.targetLufs ? preset.targetLufs + ' LUFS' : 'Dynamic'}</span>
+                        </div>
+                        <h4 class="preset-card-title">${preset.name}</h4>
+                        <p class="preset-card-desc">${preset.description || ''}</p>
+                    </div>
+                    <div class="preset-card-footer">
+                        <button class="btn btn-primary btn-load-preset-card" data-id="${preset.id}">
+                            LOAD PROFILE
+                        </button>
+                        <button class="btn btn-secondary btn-export-preset-card" data-id="${preset.id}" title="Export .mestre-preset file">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        </button>
+                        ${isCustom ? `
+                            <button class="btn btn-secondary btn-delete-preset-card" data-id="${preset.id}" title="Delete Custom Preset">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            </button>
+                        ` : ''}
+                    </div>
+                `;
+
+                card.querySelector('.btn-load-preset-card').addEventListener('click', () => {
+                    PresetManager.applyPreset(preset, this.audioMgr.rack);
+                    this.updateVisualizersFromRack();
+                    if (this.modularRackView) this.modularRackView.render();
+                    if (preset.targetLufs !== undefined) this.audioMgr.setMasteredLufs(preset.targetLufs);
+                    this.historyManager.pushSnapshot(`Preset: ${preset.name}`);
+                    const sel = document.getElementById('select-master-preset');
+                    if (sel) sel.value = preset.id;
+                    closeHub();
+                });
+
+                card.querySelector('.btn-export-preset-card').addEventListener('click', () => {
+                    PresetManager.exportSinglePreset(preset);
+                });
+
+                const delBtn = card.querySelector('.btn-delete-preset-card');
+                if (delBtn) {
+                    delBtn.addEventListener('click', () => {
+                        if (confirm(`Delete custom preset "${preset.name}"?`)) {
+                            PresetManager.deleteCustomPreset(preset.id);
+                            renderHubCards();
+                            const optgroupCustom = document.getElementById('optgroup-user-presets');
+                            if (optgroupCustom) {
+                                const customs = PresetManager.getCustomPresets();
+                                optgroupCustom.innerHTML = customs.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+                            }
+                        }
+                    });
+                }
+
+                cardsGrid.appendChild(card);
+            });
+        };
+
+        if (btnExportCurrent) {
+            btnExportCurrent.addEventListener('click', () => {
+                const name = prompt('Name your preset export:', 'Custom Master Profile');
+                if (name && name.trim()) {
+                    const preset = PresetManager.saveCustomPreset(name.trim(), this.audioMgr.rack);
+                    PresetManager.exportSinglePreset(preset);
+                    renderHubCards();
+                }
+            });
+        }
+
+        if (btnImportFile && inputPresetFile) {
+            btnImportFile.addEventListener('click', () => inputPresetFile.click());
+            inputPresetFile.addEventListener('change', (e) => {
+                if (e.target.files && e.target.files[0]) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        const imported = PresetManager.importPresetFile(event.target.result);
+                        if (imported) {
+                            renderHubCards();
+                            const optgroupCustom = document.getElementById('optgroup-user-presets');
+                            if (optgroupCustom) {
+                                const customs = PresetManager.getCustomPresets();
+                                optgroupCustom.innerHTML = customs.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+                            }
+                            alert(`Preset "${imported.name}" imported successfully!`);
+                        } else {
+                            alert('Could not parse preset file. Ensure it is a valid .mestre-preset or JSON preset.');
+                        }
+                    };
+                    reader.readAsText(e.target.files[0]);
+                }
+            });
+        }
+
+        if (btnExportAll) {
+            btnExportAll.addEventListener('click', () => {
+                const json = PresetManager.exportPresetsAsJson();
+                const blob = new Blob([json], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `mestre_presets_backup_${new Date().toISOString().slice(0, 10)}.json`;
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }, 1000);
+            });
+        }
+    }
+
+    initModuleHelpModal() {
+        const modal = document.getElementById('module-help-modal');
+        const btnClose = document.getElementById('btn-close-module-help');
+        const btnDismiss = document.getElementById('btn-dismiss-module-help');
+        if (!modal) return;
+
+        const closeModal = () => modal.classList.remove('visible');
+        if (btnClose) btnClose.addEventListener('click', closeModal);
+        if (btnDismiss) btnDismiss.addEventListener('click', closeModal);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal();
+        });
+    }
+
+    initThemeGalleryModal() {
+        const modal = document.getElementById('theme-gallery-modal');
+        const btnOpen = document.getElementById('btn-open-theme-gallery');
+        const btnClose = document.getElementById('btn-close-theme-gallery');
+        const btnDismiss = document.getElementById('btn-dismiss-theme-gallery');
+        const grid = document.getElementById('theme-gallery-grid');
+        const tabsBar = modal ? modal.querySelector('.theme-tabs-bar') : null;
+        if (!modal || !grid) return;
+
+        let currentFilter = 'all';
+
+        const renderCards = () => {
+            const currentThemeId = ThemeManager.getCurrentThemeId();
+            const themes = ThemeManager.getThemes();
+            const filtered = themes.filter(t => currentFilter === 'all' || t.mode === currentFilter);
+
+            grid.innerHTML = '';
+            filtered.forEach(t => {
+                const card = document.createElement('div');
+                card.className = `theme-card mode-${t.mode}${t.id === currentThemeId ? ' is-active' : ''}`;
+                card.innerHTML = `
+                    <div class="theme-card-top">
+                        <div class="theme-card-title-group">
+                            <h4>
+                                ${t.name}
+                                <span class="theme-mode-tag">${t.mode === 'night' ? '🌌 NIGHT' : '🌙 DARK'}</span>
+                            </h4>
+                        </div>
+                        <span class="theme-spec-pill" style="font-weight:700;color:var(--color-target);">${t.badge}</span>
+                    </div>
+                    <p class="theme-card-desc">${t.description}</p>
+                    <div class="theme-card-specs">
+                        <span class="theme-spec-pill" title="Corner Curvature">Radius: ${t.radiusCard}</span>
+                        <span class="theme-spec-pill" title="Primary Typography">Font: ${t.fontHeading}</span>
+                        <span class="theme-spec-pill" title="Hardware Heritage">${t.heritage.split(',')[0]}</span>
+                    </div>
+                    <div class="theme-swatches-strip" title="Theme Palette Preview">
+                        <span class="theme-swatch" style="background:${t.swatches.bg};" title="Background: ${t.swatches.bg}"></span>
+                        <span class="theme-swatch" style="background:${t.swatches.card};" title="Chassis: ${t.swatches.card}"></span>
+                        <span class="theme-swatch" style="background:${t.swatches.target};" title="Target: ${t.swatches.target}"></span>
+                        <span class="theme-swatch" style="background:${t.swatches.ref};" title="Reference: ${t.swatches.ref}"></span>
+                        <span class="theme-swatch" style="background:${t.swatches.match};" title="Match: ${t.swatches.match}"></span>
+                        <span class="theme-swatch" style="background:${t.swatches.accent};" title="Accent: ${t.swatches.accent}"></span>
+                    </div>
+                    <div class="theme-card-action">
+                        ${t.id === currentThemeId ? `
+                            <span class="theme-active-indicator">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                CURRENT THEME
+                            </span>
+                        ` : `
+                            <span style="font-size:11px;color:var(--text-muted);">Click to apply</span>
+                        `}
+                        <button class="btn btn-secondary" style="height:26px;font-size:10px;padding:0 10px;">
+                            ${t.id === currentThemeId ? 'APPLIED' : 'SELECT'}
+                        </button>
+                    </div>
+                `;
+
+                card.addEventListener('click', () => {
+                    ThemeManager.applyTheme(t.id);
+                    renderCards();
+                });
+
+                grid.appendChild(card);
+            });
+        };
+
+        const openModal = () => {
+            renderCards();
+            modal.classList.add('visible');
+        };
+
+        const closeModal = () => modal.classList.remove('visible');
+
+        if (btnOpen) btnOpen.addEventListener('click', openModal);
+        if (btnClose) btnClose.addEventListener('click', closeModal);
+        if (btnDismiss) btnDismiss.addEventListener('click', closeModal);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal();
+        });
+
+        if (tabsBar) {
+            tabsBar.addEventListener('click', (e) => {
+                const btn = e.target.closest('.theme-tab-btn');
+                if (btn) {
+                    tabsBar.querySelectorAll('.theme-tab-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentFilter = btn.dataset.mode;
+                    renderCards();
+                }
+            });
+        }
+    }
+
+    updateHistoryUi(state) {
+        if (!state) return;
+        const btnHeaderUndo = document.getElementById('btn-undo');
+        const btnHeaderRedo = document.getElementById('btn-redo');
+        if (btnHeaderUndo) {
+            btnHeaderUndo.disabled = !state.canUndo;
+            btnHeaderUndo.title = state.canUndo ? `Undo: ${state.undoDesc || 'Action'} (Ctrl+Z)` : 'Undo (Ctrl+Z)';
+        }
+        if (btnHeaderRedo) {
+            btnHeaderRedo.disabled = !state.canRedo;
+            btnHeaderRedo.title = state.canRedo ? `Redo: ${state.redoDesc || 'Action'} (Ctrl+Y)` : 'Redo (Ctrl+Y)';
+        }
+
+        if (this.modularRackView) {
+            this.modularRackView.updateHistoryState(state);
         }
     }
 
@@ -436,6 +753,23 @@ class MasteringApp {
             // Ignore keystrokes when typing into input, textarea, or select
             const tag = e.target.tagName.toLowerCase();
             if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+
+            // Global Undo / Redo Shortcuts (Ctrl+Z, Ctrl+Y, Ctrl+Shift+Z)
+            const isCtrl = e.ctrlKey || e.metaKey;
+            if (isCtrl && e.key.toLowerCase() === 'z') {
+                e.preventDefault();
+                if (e.shiftKey) {
+                    this.historyManager.redo();
+                } else {
+                    this.historyManager.undo();
+                }
+                return;
+            }
+            if (isCtrl && e.key.toLowerCase() === 'y') {
+                e.preventDefault();
+                this.historyManager.redo();
+                return;
+            }
 
             const key = e.key;
 
@@ -482,6 +816,10 @@ class MasteringApp {
                 if (this.qualityInspector) this.qualityInspector.close();
                 const exportModal = document.getElementById('export-modal');
                 if (exportModal) exportModal.classList.remove('visible');
+                const presetModal = document.getElementById('preset-hub-modal');
+                if (presetModal) presetModal.classList.remove('visible');
+                const helpModal = document.getElementById('module-help-modal');
+                if (helpModal) helpModal.classList.remove('visible');
             }
         });
     }
@@ -739,6 +1077,7 @@ class MasteringApp {
             };
 
             this.transport.snapSlidersToMatchedValues(matchedParams);
+            this.historyManager.pushSnapshot('Apply Reference Match');
 
             // Dispatch to Wasm DSP Engine if available
             if (this.audioMgr.wasmBridge) {
@@ -952,6 +1291,24 @@ class MasteringApp {
             const sr = this.targetTrack.audioBuffer.sampleRate;
             const filters = this.matchEngine.computeBiquadCoefficients(sr);
 
+            const exportTarget = document.getElementById('select-export-target')?.value || 'spotify';
+            let targetLufs = undefined;
+            let truePeakCeilingDb = -0.2;
+
+            if (exportTarget === 'spotify') {
+                targetLufs = -14.0;
+                truePeakCeilingDb = -1.0;
+            } else if (exportTarget === 'apple') {
+                targetLufs = -16.0;
+                truePeakCeilingDb = -1.0;
+            } else if (exportTarget === 'club') {
+                targetLufs = -9.0;
+                truePeakCeilingDb = -0.2;
+            } else if (exportTarget === 'cd') {
+                targetLufs = -12.0;
+                truePeakCeilingDb = -0.3;
+            }
+
             const masterParams = {
                 inputGainDb: parseFloat(document.getElementById('slider-input-gain').value) || 0,
                 matchAmount: this.matchEngine.matchAmount,
@@ -962,7 +1319,9 @@ class MasteringApp {
                 limiterCeilingDb: parseFloat(document.getElementById('slider-limiter-ceil').value) || -0.2,
                 limiterReleaseMs: 80.0,
                 limiterLookaheadMs: 4.0,
-                limiterSoftClip: true
+                limiterSoftClip: true,
+                targetLufs,
+                truePeakCeilingDb
             };
 
             const wasmModule = this.audioMgr.wasmBridge ? this.audioMgr.wasmBridge.wasmModule : null;
@@ -981,11 +1340,13 @@ class MasteringApp {
             this.audioMgr.setMasteredBuffer(masteredBuffer);
             this.metersView.setMasteredMetrics(stats);
 
-            // Generate filename based on target track name
+            // Generate filename based on target track name & streaming target
             const baseName = this.targetTrack.name.replace(/\.[^/.]+$/, '');
-            const filename = `${baseName}_Mastered_Match_${bitDepth}bit.wav`;
+            const targetSuffix = exportTarget !== 'none' ? `_${exportTarget.toUpperCase()}` : '';
+            const filename = `${baseName}_Mastered${targetSuffix}_${bitDepth}bit.wav`;
 
-            progressText.textContent = 'Encoding WAV and saving to browser downloads...';
+            const normInfo = stats.normalizationAppliedDb ? ` (${stats.normalizationAppliedDb >= 0 ? '+' : ''}${stats.normalizationAppliedDb.toFixed(1)} dB norm)` : '';
+            progressText.textContent = `Master: ${stats.integrated.toFixed(1)} LUFS${normInfo} • Saving WAV...`;
             WavExporter.downloadWav(masteredBuffer, filename, bitDepth, enableDither);
 
             setTimeout(() => {
@@ -1050,6 +1411,27 @@ class MasteringApp {
                     });
                     meteringAttached = true;
                 }
+
+                // 5. Update live Phase Correlation Meter in Transport
+                const corr = this.audioMgr.getPhaseCorrelation();
+                const phaseVal = document.getElementById('transport-phase-val');
+                const phaseBar = document.getElementById('transport-phase-bar');
+                if (phaseVal && phaseBar) {
+                    phaseVal.textContent = `${corr >= 0 ? '+' : ''}${corr.toFixed(2)}`;
+                    const pct = ((corr + 1.0) / 2.0) * 100;
+                    phaseBar.style.left = `${Math.min(50, pct)}%`;
+                    phaseBar.style.width = `${Math.abs(pct - 50)}%`;
+                    if (corr > 0.35) {
+                        phaseBar.style.background = 'var(--color-success, #10b981)';
+                        phaseVal.style.color = 'var(--color-success, #10b981)';
+                    } else if (corr >= 0.0) {
+                        phaseBar.style.background = 'var(--color-warning, #f59e0b)';
+                        phaseVal.style.color = 'var(--color-warning, #f59e0b)';
+                    } else {
+                        phaseBar.style.background = 'var(--color-danger, #ef4444)';
+                        phaseVal.style.color = 'var(--color-danger, #ef4444)';
+                    }
+                }
             }
             requestAnimationFrame(loop);
         };
@@ -1060,5 +1442,5 @@ class MasteringApp {
 // Instantiate application when DOM is ready
 window.addEventListener('DOMContentLoaded', () => {
     window.__app = new MasteringApp();
-    console.log('[AURA MASTER] Application initialized and ready.');
+    console.log('[MESTRE] Application initialized and ready.');
 });

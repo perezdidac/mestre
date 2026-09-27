@@ -3,71 +3,130 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AURA Master | Professional Reference Match Audio DSP Engine</title>
-    <meta name="description" content="Client-side browser-based audio mastering suite featuring WebAudio and WebAssembly (Wasm) Reference Match DSP engine. Analyze target and reference tracks and master instantly in local memory.">
-  <script type="module" crossorigin src="/assets/index-Sb4nTvKN.js"></script>
-  <link rel="stylesheet" crossorigin href="/assets/index-H4Ty9aen.css">
+    <title>Mestre | Professional Reference Match Audio DSP Engine</title>
+    <meta name="description" content="Mestre — Client-side browser-based audio mastering suite featuring WebAudio and WebAssembly (Wasm) Reference Match DSP engine. Analyze target and reference tracks and master instantly in local memory.">
+  <script type="module" crossorigin src="/assets/index-CK1VFGTf.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-7cbL8u6K.css">
 </head>
 <body>
     <div class="app-container">
         <!-- Studio Header -->
         <header class="app-header">
-            <div class="logo-area">
+            <div class="logo-area" title="Mestre (Catalan for 'Master' / 'Teacher') — Reference Match Audio DSP Console">
                 <div class="logo-icon">
                     <svg viewBox="0 0 24 24">
                         <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
                     </svg>
                 </div>
                 <div class="logo-text">
-                    <h1>AURA MASTER <span class="console-series-tag">M-100 CONSOLE</span></h1>
+                    <h1>MESTRE <span class="console-series-tag">CONSOLE</span></h1>
                     <span class="subtitle">Autonomous Reference Match DSP Architecture</span>
                 </div>
             </div>
 
             <div class="header-badges">
+                <!-- Global Undo / Redo Controls -->
+                <div class="undo-redo-group" title="Undo / Redo Rack History">
+                    <button class="btn btn-secondary btn-icon-undo" id="btn-undo" title="Undo Last Action (Ctrl+Z)" disabled>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                            <polyline points="1 4 1 10 7 10"></polyline>
+                            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                        </svg>
+                        <span class="btn-text">UNDO</span>
+                    </button>
+                    <button class="btn btn-secondary btn-icon-redo" id="btn-redo" title="Redo (Ctrl+Y / Ctrl+Shift+Z)" disabled>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                            <polyline points="23 4 23 10 17 10"></polyline>
+                            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                        </svg>
+                        <span class="btn-text">REDO</span>
+                    </button>
+                </div>
+
                 <!-- Master Preset Profile Selector -->
                 <div class="preset-dropdown-container">
-                    <span class="header-control-tag">PROFILE</span>
-                    <select class="styled-select preset-select" id="select-master-preset" title="Load Mastering Preset Profile">
-                        <optgroup label="Streaming & Commercial Standards">
-                            <option value="streaming_standard" selected>Streaming Standard (-14 LUFS)</option>
-                            <option value="edm_club_punch">Club & EDM Maximum Impact (-8 LUFS)</option>
-                            <option value="hiphop_trap_warmth">Modern Hip-Hop & 808 Trap</option>
-                            <option value="vintage_analog_vinyl">Warm Vintage Vinyl & Tape</option>
-                            <option value="acoustic_vocal_clarity">Acoustic & Vocal Intimacy</option>
-                            <option value="heavy_rock_punch">Rock & Metal Wall-of-Sound</option>
+                    <span class="header-control-tag">STYLE PRESET</span>
+                    <select class="styled-select preset-select" id="select-master-preset" title="Load Mastering Sound Style Preset">
+                        <option value="initial_clean_bypass" selected>Initial Clean (All Bypassed / Flat)</option>
+                        <optgroup label="Creative Sound Style Simulations">
+                            <option value="streaming_standard">1. Streaming Standard (-14 LUFS)</option>
+                            <option value="edm_club_punch">2. Club & Festival EDM Impact (-7.5 LUFS)</option>
+                            <option value="hiphop_trap_heat">3. Modern 808 Trap & Hip-Hop (-9.0 LUFS)</option>
+                            <option value="vintage_70s_tape">4. Vintage 70s Analog Tape & Tube (-12 LUFS)</option>
+                            <option value="lofi_nostalgia">5. 90s Lo-Fi Boom Bap & Vinyl Grit (-13 LUFS)</option>
+                            <option value="synthwave_neon">6. Synthwave & Cyberpunk 80s Neon (-8.5 LUFS)</option>
+                            <option value="acoustic_vocal">7. Acoustic & Intimate Vocal Air (-15 LUFS)</option>
+                            <option value="rock_metal_wall">8. Rock & Metal Wall-of-Sound (-8.5 LUFS)</option>
+                            <option value="ambient_cinematic">9. Deep Ambient & Cinematic Space (-16 LUFS)</option>
+                            <option value="motown_soul">10. Motown & R&B Soul Warmth (-11.5 LUFS)</option>
+                            <option value="studer_a800_master">11. Studer A800 1/2-Inch Master Tape (-12.0 LUFS)</option>
+                            <option value="abbey_chamber_air">12. Abbey Acoustic Chamber & Vocal Air (-15.0 LUFS)</option>
                         </optgroup>
                         <optgroup label="Custom User Presets" id="optgroup-user-presets">
                         </optgroup>
                     </select>
-                    <button class="btn btn-secondary btn-icon-preset" id="btn-save-custom-preset" title="Save current rack settings as custom preset">💾</button>
+                    <button class="btn btn-secondary btn-icon-preset" id="btn-save-custom-preset" title="Quick save current rack settings as custom preset">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                            <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                            <polyline points="7 3 7 8 15 8"></polyline>
+                        </svg>
+                    </button>
+                    <button class="btn btn-secondary btn-icon-preset" id="btn-open-preset-hub" title="Open Preset Library Manager (Import/Export .mestre-preset)">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                        </svg>
+                    </button>
                 </div>
 
                 <!-- Master Pre-Flight Quality Inspector Button -->
                 <button class="btn btn-secondary btn-quality-inspector" id="btn-open-quality-inspector" title="Open Master Pre-Flight Quality Inspector">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
                         <circle cx="11" cy="11" r="8"></circle>
                         <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                     </svg>
-                    <span>PRE-FLIGHT CHECK</span>
+                    <span>PRE-FLIGHT</span>
                 </button>
 
-                <button class="btn btn-secondary btn-theme-toggle" id="btn-theme-toggle" title="Toggle Bright Studio / Dark Console">
-                    <span id="theme-toggle-icon">🌙</span>
-                    <span id="theme-toggle-label">Dark Console</span>
-                </button>
+                <!-- 10 Theme Studio Switcher (5 Dark & 5 Night Modes) -->
+                <div class="theme-dropdown-container" title="Select Mestre UI Theme (5 Dark & 5 Night Modes)">
+                    <span class="header-control-tag">THEME</span>
+                    <select class="styled-select theme-select" id="select-ui-theme" title="Switch UI Theme">
+                        <optgroup label="🌙 5 Dark Modes">
+                            <option value="dark_studio" selected>1. Studio Gunmetal (6px)</option>
+                            <option value="dark_obsidian">2. Obsidian Slate (10px)</option>
+                            <option value="dark_espresso">3. Vintage Espresso (12px)</option>
+                            <option value="dark_carbon">4. Carbon Matrix (3px)</option>
+                            <option value="dark_amethyst">5. Royal Amethyst (14px)</option>
+                        </optgroup>
+                        <optgroup label="🌌 5 Night Modes">
+                            <option value="night_oled">6. OLED Pure Pitch (2px)</option>
+                            <option value="night_cyberpunk">7. Cyberpunk Neo (8px)</option>
+                            <option value="night_abyss">8. Mariana Abyss (12px)</option>
+                            <option value="night_crimson">9. Crimson Darkroom (4px)</option>
+                            <option value="night_aurora">10. Aurora Borealis (16px)</option>
+                        </optgroup>
+                    </select>
+                    <button class="btn btn-secondary btn-icon-theme" id="btn-open-theme-gallery" title="Open Theme Showcase Gallery">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M12 2a10 10 0 0 1 10 10c0 2.5-1.5 3.5-2.5 3.5H17a2 2 0 0 0-2 2c0 1.5.5 2.5 0 3.5a10 10 0 0 1-3-19z"></path>
+                        </svg>
+                    </button>
+                </div>
                 <div class="status-badge" id="badge-wasm-status">
                     <span class="status-dot"></span>
-                    <span id="label-wasm-status">HYBRID DSP RACK</span>
+                    <span id="label-wasm-status">HYBRID DSP</span>
                 </div>
                 <div class="status-badge" id="badge-sr-status">
-                    <span id="label-sr-status">48 kHz | REALTIME</span>
+                    <span id="label-sr-status">48 kHz | RT</span>
                 </div>
-                <button class="btn btn-secondary btn-demo" id="btn-load-demo" title="Load demo tracks">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <button class="btn btn-secondary btn-demo" id="btn-load-demo" title="Load Demo Reference Tracks">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
                         <polygon points="5 3 19 12 5 21 5 3"></polygon>
                     </svg>
-                    Load Demo Tracks
+                    <span>DEMO STEMS</span>
                 </button>
             </div>
         </header>
@@ -350,27 +409,45 @@
                 <span class="gain-offset-badge" id="badge-autogain-offset" style="display:none;">0.0 dB</span>
             </button>
 
-            <!-- Channel Listening Matrix: Stereo, Mono Mid, Sides, Delta Listen -->
-            <div class="matrix-pill-group" title="Monitoring Matrix: Stereo, Summed Mono, Sides Only, Delta Listen">
+            <!-- Channel Listening Matrix: Stereo, Mono Mid, Sides, Left Solo, Right Solo, Delta Listen -->
+            <div class="matrix-pill-group" title="Monitoring Matrix: Stereo, Mid (Mono), Sides (L-R), Left Solo, Right Solo, Delta">
                 <button class="matrix-pill active" id="btn-matrix-stereo" data-matrix="stereo" title="Full Stereo Monitoring">STEREO</button>
-                <button class="matrix-pill" id="btn-matrix-mono" data-matrix="mono" title="Summed Mono (L+R) to check mono compatibility">MONO</button>
+                <button class="matrix-pill" id="btn-matrix-mono" data-matrix="mono" title="Summed Mid Mono (L+R) to check mono compatibility">MID</button>
                 <button class="matrix-pill" id="btn-matrix-sides" data-matrix="sides" title="Sides Only (L-R) to audition stereo reverb & width">SIDES</button>
+                <button class="matrix-pill" id="btn-matrix-left" data-matrix="left_solo" title="Left Channel Solo">L SOLO</button>
+                <button class="matrix-pill" id="btn-matrix-right" data-matrix="right_solo" title="Right Channel Solo">R SOLO</button>
                 <button class="matrix-pill" id="btn-matrix-delta" data-matrix="delta" title="Delta Listen: Audition purely the mastering difference (Mastered - Dry)">DELTA</button>
+            </div>
+
+            <!-- Live Stereo Phase Correlation LED Meter Strip -->
+            <div class="transport-phase-corr" id="transport-phase-corr" title="Real-Time Phase Correlation (-1.0 to +1.0). Target: > +0.2 for mono safety">
+                <div class="phase-corr-header">
+                    <span class="phase-corr-title">PHASE&nbsp;r</span>
+                    <span class="phase-corr-val" id="transport-phase-val">+1.00</span>
+                </div>
+                <div class="phase-corr-track">
+                    <div class="phase-corr-center"></div>
+                    <div class="phase-corr-bar" id="transport-phase-bar" style="left: 50%; width: 50%;"></div>
+                </div>
             </div>
         </div>
 
         <!-- Transport Right: Shortcuts & Export Action -->
         <div class="transport-right">
-            <button class="btn btn-secondary" id="btn-open-shortcuts" title="Keyboard Shortcuts Cheat Sheet (Press ?)">
-                ⌨️ <span class="hotkeys-btn-label">Hotkeys</span>
+            <button class="btn btn-secondary btn-hotkeys" id="btn-open-shortcuts" title="Keyboard Shortcuts Cheat Sheet (Press ?)">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                    <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+                    <path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M6 12h.01M10 12h.01M14 12h.01M18 12h.01M7 16h10"></path>
+                </svg>
+                <span class="hotkeys-btn-label">HOTKEYS</span>
             </button>
-            <button class="btn btn-secondary" id="btn-export-master" style="background: linear-gradient(135deg, #0ea5e9, #2563eb); color: #fff; border: none; box-shadow: 0 0 20px rgba(37, 99, 235, 0.4);">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <button class="btn btn-export-master" id="btn-export-master">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                     <polyline points="7 10 12 15 17 10"></polyline>
                     <line x1="12" y1="15" x2="12" y2="3"></line>
                 </svg>
-                Export Master WAV
+                <span>EXPORT WAV</span>
             </button>
         </div>
     </nav>
@@ -386,6 +463,17 @@
                 <p style="font-size: 13px; color: var(--text-secondary);">
                     The entire Target track will be processed through the WebAssembly DSP mastering chain and saved locally to your device.
                 </p>
+
+                <div class="form-group">
+                    <label for="select-export-target">Streaming Platform Target (Loudness Normalization)</label>
+                    <select class="styled-select" id="select-export-target">
+                        <option value="none">Raw Dynamic Master (No Normalization)</option>
+                        <option value="spotify" selected>Spotify / YouTube / TIDAL (-14.0 LUFS, -1.0 dBTP)</option>
+                        <option value="apple">Apple Music (-16.0 LUFS, -1.0 dBTP)</option>
+                        <option value="club">Club / Beatport / DJ Impact (-9.0 LUFS, -0.2 dBTP)</option>
+                        <option value="cd">Standard Audio CD Master (-12.0 LUFS, -0.3 dBTP)</option>
+                    </select>
+                </div>
 
                 <div class="form-group">
                     <label for="select-bit-depth">Format & Bit Depth</label>
@@ -427,6 +515,8 @@
                 <button class="btn btn-secondary" id="btn-close-shortcuts" style="padding: 4px 8px;">✕</button>
             </div>
             <div class="modal-body shortcuts-grid">
+                <div class="shortcut-item"><kbd>Ctrl</kbd> + <kbd>Z</kbd> <span>Undo Last Action</span></div>
+                <div class="shortcut-item"><kbd>Ctrl</kbd> + <kbd>Y</kbd> <span>Redo (or Ctrl+Shift+Z)</span></div>
                 <div class="shortcut-item"><kbd>Space</kbd> <span>Play / Pause</span></div>
                 <div class="shortcut-item"><kbd>B</kbd> <span>Toggle Master Bypass</span></div>
                 <div class="shortcut-item"><kbd>L</kbd> <span>Toggle Playback Loop</span></div>
@@ -442,6 +532,92 @@
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" id="btn-dismiss-shortcuts">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Preset Library Hub Modal Dialog -->
+    <div class="modal-backdrop" id="preset-hub-modal">
+        <div class="modal-dialog preset-hub-dialog">
+            <div class="modal-header">
+                <div class="preset-hub-header-title">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                    </svg>
+                    <h3 class="modal-title">Mestre Preset Library Hub</h3>
+                </div>
+                <button class="btn btn-secondary" id="btn-close-preset-hub" style="padding: 4px 8px;">✕</button>
+            </div>
+            <div class="modal-body preset-hub-body">
+                <div class="preset-hub-actions-bar">
+                    <button class="btn btn-secondary" id="btn-hub-export-current">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        <span>Export Current as .mestre-preset</span>
+                    </button>
+                    <button class="btn btn-secondary" id="btn-hub-import-file">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        <span>Import .mestre-preset File</span>
+                    </button>
+                    <input type="file" id="input-preset-file" accept=".json,.mestre-preset" style="display:none;">
+                    <button class="btn btn-secondary" id="btn-hub-export-all">
+                        <span>Backup All Presets JSON</span>
+                    </button>
+                </div>
+                <div class="preset-cards-grid" id="preset-cards-grid">
+                    <!-- Populated dynamically via main.js -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Processor Unit Hardware Documentation & Algorithm Guide Modal -->
+    <div class="modal-backdrop" id="module-help-modal">
+        <div class="modal-dialog module-help-dialog">
+            <div class="modal-header">
+                <div class="module-help-header-title">
+                    <span class="help-modal-icon-badge" id="help-modal-icon"></span>
+                    <div class="help-modal-titles">
+                        <h3 class="modal-title" id="help-modal-title">Processor Documentation</h3>
+                        <span class="module-serial" id="help-modal-serial">M-000 // HARDWARE MANUAL</span>
+                    </div>
+                </div>
+                <button class="btn btn-secondary" id="btn-close-module-help" style="padding: 4px 8px;">✕</button>
+            </div>
+            <div class="modal-body module-help-body" id="help-modal-body">
+                <!-- Dynamically populated from MODULE_DOCUMENTATION -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="btn-dismiss-module-help">Close Manual</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- UI Theme Showcase Gallery Modal (5 Dark & 5 Night Modes) -->
+    <div class="modal-backdrop" id="theme-gallery-modal">
+        <div class="modal-dialog theme-gallery-dialog">
+            <div class="modal-header">
+                <div class="theme-gallery-header-title">
+                    <span class="theme-gallery-icon-badge">🎨</span>
+                    <div>
+                        <h3 class="modal-title">Mestre Studio Theme Gallery</h3>
+                        <span class="module-serial">10 CURATED CONSOLE STYLES // 5 DARK &amp; 5 NIGHT MODES</span>
+                    </div>
+                </div>
+                <button class="btn btn-secondary" id="btn-close-theme-gallery" style="padding: 4px 8px;">✕</button>
+            </div>
+            <div class="modal-body theme-gallery-body">
+                <div class="theme-tabs-bar">
+                    <button class="theme-tab-btn active" data-mode="all">All 10 Themes</button>
+                    <button class="theme-tab-btn" data-mode="dark">🌙 5 Dark Modes</button>
+                    <button class="theme-tab-btn" data-mode="night">🌌 5 Night Modes</button>
+                </div>
+                <div class="theme-gallery-grid" id="theme-gallery-grid">
+                    <!-- Populated dynamically via themeManager.js -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="btn-dismiss-theme-gallery">Done</button>
             </div>
         </div>
     </div>

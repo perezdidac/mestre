@@ -1,4 +1,6 @@
-# AURA Master — Client-Side Audio Mastering & Reference Match DSP Suite
+# Mestre — Client-Side Audio Mastering & Reference Match DSP Suite
+
+*Named after the Catalan word **"Mestre"** (meaning "master" or "teacher"), honoring the art and guidance of audio mastering.*
 
 A modern, browser-based audio mastering workstation powered by the **Web Audio API** and **WebAssembly (Wasm)**. Its core feature is a **Reference Match Engine** that ingests an unmastered Target track and a commercial Reference track, computes high-resolution spectral and dynamic profiles, and automatically synthesizes a mastering chain (EQ, compression, lookahead true-peak limiting, and loudness matching) locally in browser memory.
 

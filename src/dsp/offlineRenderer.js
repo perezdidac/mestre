@@ -137,11 +137,41 @@ export class OfflineMasteringRenderer {
 
             if (onProgress) onProgress(0.95, 'Analyzing final master loudness & True-Peak...');
             const lufsMeter = new LUFSMeter(sampleRate);
-            const finalStats = lufsMeter.analyzeAudioBuffer(renderedBuffer);
+            let finalStats = lufsMeter.analyzeAudioBuffer(renderedBuffer);
+
+            // Optional Streaming Target Normalization Pass
+            let finalBuffer = renderedBuffer;
+            if (masterParams.targetLufs !== undefined && masterParams.targetLufs !== null && !isNaN(masterParams.targetLufs)) {
+                const targetLufs = masterParams.targetLufs;
+                const currentLufs = finalStats.integrated;
+                const deltaDb = targetLufs - currentLufs;
+                if (Math.abs(deltaDb) > 0.1 && Math.abs(deltaDb) <= 12.0) {
+                    if (onProgress) onProgress(0.98, `Applying ${targetLufs.toFixed(1)} LUFS Streaming Normalization...`);
+                    const gainLin = Math.pow(10.0, deltaDb / 20.0);
+                    const ceilLin = Math.pow(10.0, (masterParams.truePeakCeilingDb !== undefined ? masterParams.truePeakCeilingDb : -1.0) / 20.0);
+                    const normBuffer = offlineCtx.createBuffer(numChannels, length, sampleRate);
+                    for (let ch = 0; ch < numChannels; ch++) {
+                        const src = renderedBuffer.getChannelData(ch);
+                        const dst = normBuffer.getChannelData(ch);
+                        for (let i = 0; i < length; i++) {
+                            let s = src[i] * gainLin;
+                            if (Math.abs(s) > ceilLin) {
+                                const sign = s >= 0 ? 1 : -1;
+                                s = sign * (ceilLin + (1.0 - ceilLin) * Math.tanh((Math.abs(s) - ceilLin) / (1.2 - ceilLin)));
+                            }
+                            dst[i] = s;
+                        }
+                    }
+                    finalBuffer = normBuffer;
+                    finalStats = lufsMeter.analyzeAudioBuffer(finalBuffer);
+                    finalStats.normalizationAppliedDb = deltaDb;
+                }
+            }
+
             if (onProgress) onProgress(1.0, 'Mastering render complete!');
 
             return {
-                masteredBuffer: renderedBuffer,
+                masteredBuffer: finalBuffer,
                 stats: finalStats
             };
         }
@@ -186,12 +216,41 @@ export class OfflineMasteringRenderer {
 
         // 5. Post-render quality analysis
         const lufsMeter = new LUFSMeter(sampleRate);
-        const finalStats = lufsMeter.analyzeAudioBuffer(outputBuffer);
+        let finalStats = lufsMeter.analyzeAudioBuffer(outputBuffer);
+
+        // 6. Optional Streaming Target Normalization Pass
+        let finalBuffer = outputBuffer;
+        if (masterParams.targetLufs !== undefined && masterParams.targetLufs !== null && !isNaN(masterParams.targetLufs)) {
+            const targetLufs = masterParams.targetLufs;
+            const currentLufs = finalStats.integrated;
+            const deltaDb = targetLufs - currentLufs;
+            if (Math.abs(deltaDb) > 0.1 && Math.abs(deltaDb) <= 12.0) {
+                if (onProgress) onProgress(0.98, `Applying ${targetLufs.toFixed(1)} LUFS Streaming Normalization (${deltaDb >= 0 ? '+' : ''}${deltaDb.toFixed(1)} dB)...`);
+                const gainLin = Math.pow(10.0, deltaDb / 20.0);
+                const ceilLin = Math.pow(10.0, (masterParams.truePeakCeilingDb !== undefined ? masterParams.truePeakCeilingDb : -1.0) / 20.0);
+                const normBuffer = offlineCtx.createBuffer(numChannels, length, sampleRate);
+                for (let ch = 0; ch < numChannels; ch++) {
+                    const src = outputBuffer.getChannelData(ch);
+                    const dst = normBuffer.getChannelData(ch);
+                    for (let i = 0; i < length; i++) {
+                        let s = src[i] * gainLin;
+                        if (Math.abs(s) > ceilLin) {
+                            const sign = s >= 0 ? 1 : -1;
+                            s = sign * (ceilLin + (1.0 - ceilLin) * Math.tanh((Math.abs(s) - ceilLin) / (1.2 - ceilLin)));
+                        }
+                        dst[i] = s;
+                    }
+                }
+                finalBuffer = normBuffer;
+                finalStats = lufsMeter.analyzeAudioBuffer(finalBuffer);
+                finalStats.normalizationAppliedDb = deltaDb;
+            }
+        }
 
         if (onProgress) onProgress(1.0, 'Mastering render complete!');
 
         return {
-            masteredBuffer: outputBuffer,
+            masteredBuffer: finalBuffer,
             stats: finalStats
         };
     }

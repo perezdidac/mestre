@@ -1,99 +1,491 @@
-/* Luminous Bright Studio & Dark Studio Mastering Design System */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@400;500;600;700;800&display=swap');
+/* Precision Mastering Console Design System — 10 Curated Themes (5 Dark & 5 Night Modes) */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..800;1,9..40,400..800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=Syne:wght@500;700;800&display=swap');
 
 :root {
-    /* Default: Bright Studio Console Palette */
-    --bg-primary: #edf2f7;
-    --bg-secondary: #f8fafc;
-    --bg-card: #ffffff;
-    --bg-card-hover: #f1f5f9;
-    --bg-card-header: rgba(0, 0, 0, 0.025);
-    --bg-panel: #ffffff;
-    --bg-input: #f1f5f9;
-    --bg-viewport: #0b0f19; /* High-contrast dark display for waveforms & spectrum canvas */
+    /* Default Base Variables */
+    --toolbar-height: 32px;
+    --transport-btn-height: 40px;
+    --val-badge-width: 66px;
+    --transition-fast: 0.12s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-normal: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    --texture-metal: url('/textures/studio_metal.jpg');
 
-    /* Vibrant Hardware Accent Colors */
-    --color-target: #0284c7;
-    --color-target-glow: rgba(2, 132, 199, 0.25);
-    --color-ref: #d97706;
-    --color-ref-glow: rgba(217, 119, 6, 0.25);
-    --color-match: #059669;
-    --color-match-glow: rgba(5, 150, 105, 0.3);
-    --color-mastered: #7c3aed;
-    --color-mastered-glow: rgba(124, 58, 237, 0.25);
-    --color-danger: #dc2626;
-    --color-danger-glow: rgba(220, 38, 38, 0.25);
+    /* Default (Dark Studio Gunmetal) */
+    --bg-primary: #0a0d14;
+    --bg-secondary: #0f1420;
+    --bg-card: #131926;
+    --bg-card-hover: #182030;
+    --bg-card-header: #151c2b;
+    --bg-panel: #131926;
+    --bg-input: #0a0d14;
+    --bg-well: #07090e;
+    --bg-viewport: #05070a;
 
-    /* Text & Typography */
-    --font-heading: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
-    --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --color-target: #00e5ff;
+    --color-target-glow: rgba(0, 229, 255, 0.35);
+    --color-ref: #f59e0b;
+    --color-ref-glow: rgba(245, 158, 11, 0.35);
+    --color-match: #10b981;
+    --color-match-glow: rgba(16, 185, 129, 0.35);
+    --color-mastered: #a855f7;
+    --color-mastered-glow: rgba(168, 85, 247, 0.35);
+    --color-danger: #ef4444;
+
+    --font-heading: 'Inter', -apple-system, sans-serif;
+    --font-body: 'Inter', -apple-system, sans-serif;
     --font-mono: 'JetBrains Mono', monospace;
 
-    --text-primary: #0f172a;
-    --text-secondary: #475569;
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
     --text-muted: #64748b;
-    --text-dim: #94a3b8;
+    --text-dim: #475569;
 
-    /* Borders & Glassmorphism */
-    --border-subtle: rgba(0, 0, 0, 0.08);
-    --border-bright: rgba(0, 0, 0, 0.16);
-    --border-highlight: rgba(2, 132, 199, 0.5);
-    --glass-blur: blur(16px);
-    --card-radius: 12px;
-    --pill-radius: 9999px;
+    --border-subtle: rgba(255, 255, 255, 0.10);
+    --border-bright: rgba(255, 255, 255, 0.20);
+    --border-highlight: rgba(0, 229, 255, 0.5);
 
-    /* Shadows & Elevation */
-    --shadow-card: 0 4px 20px -2px rgba(15, 23, 42, 0.07), 0 0 0 1px var(--border-subtle);
-    --shadow-glow-cyan: 0 0 20px -3px var(--color-target-glow);
-    --shadow-glow-emerald: 0 0 25px -3px var(--color-match-glow);
-    --shadow-glow-amber: 0 0 20px -3px var(--color-ref-glow);
+    --card-radius: 6px;
+    --control-radius: 4px;
 
-    /* Transitions */
-    --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-
-    /* Hardware Textures & Machined Metal Styling */
-    --texture-metal: url('/textures/studio_metal.jpg');
-    --hardware-bevel: inset 0 1px 0 rgba(255, 255, 255, 0.4), inset 0 -1px 0 rgba(0, 0, 0, 0.15), 0 2px 6px rgba(0, 0, 0, 0.08);
-    --hardware-screw: radial-gradient(circle, #cbd5e1 35%, #94a3b8 65%, #64748b 100%);
-    --vfd-glow: 0 0 12px rgba(2, 132, 199, 0.4);
+    --shadow-card: 0 8px 28px -4px rgba(0, 0, 0, 0.75), 0 0 0 1px var(--border-subtle);
+    --shadow-recessed: inset 0 2px 6px rgba(0, 0, 0, 0.85), inset 0 0 0 1px rgba(0, 0, 0, 0.6);
+    --shadow-button: 0 2px 4px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    --hardware-screw: radial-gradient(circle, #475569 35%, #1e293b 65%, #0f172a 100%);
 }
 
-/* Authentic Dark Studio Console Theme (Mastering Grade) */
-[data-theme="dark"] {
-    --bg-primary: #07090f;
-    --bg-secondary: #0c111c;
-    --bg-card: rgba(14, 19, 31, 0.88);
-    --bg-card-hover: rgba(20, 27, 44, 0.92);
-    --bg-card-header: rgba(255, 255, 255, 0.035);
-    --bg-panel: #0d121e;
-    --bg-input: #070a12;
-    --bg-viewport: #04070d;
+/* ==========================================================================
+   5 DARK THEMES (Industrial, Minimalist, Vintage, Technical, Luxury)
+   ========================================================================== */
 
-    --color-target: #00f0ff;
-    --color-target-glow: rgba(0, 240, 255, 0.4);
+/* 1. DARK: Studio Gunmetal (Precision Pro German Mastering Console) */
+[data-theme="dark"],
+[data-theme="dark_studio"] {
+    --bg-primary: #0a0d14;
+    --bg-secondary: #0f1420;
+    --bg-card: #131926;
+    --bg-card-hover: #182030;
+    --bg-card-header: #151c2b;
+    --bg-panel: #131926;
+    --bg-input: #0a0d14;
+    --bg-well: #07090e;
+    --bg-viewport: #05070a;
+
+    --color-target: #00e5ff;
+    --color-target-glow: rgba(0, 229, 255, 0.35);
     --color-ref: #f59e0b;
-    --color-ref-glow: rgba(245, 158, 11, 0.4);
+    --color-ref-glow: rgba(245, 158, 11, 0.35);
     --color-match: #10b981;
-    --color-match-glow: rgba(16, 185, 129, 0.45);
+    --color-match-glow: rgba(16, 185, 129, 0.35);
     --color-mastered: #a855f7;
-    --color-mastered-glow: rgba(168, 85, 247, 0.4);
+    --color-mastered-glow: rgba(168, 85, 247, 0.35);
     --color-danger: #ef4444;
+
+    --font-heading: 'Inter', -apple-system, sans-serif;
+    --font-body: 'Inter', -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --text-dim: #475569;
+
+    --border-subtle: rgba(255, 255, 255, 0.10);
+    --border-bright: rgba(255, 255, 255, 0.22);
+    --border-highlight: rgba(0, 229, 255, 0.55);
+
+    --card-radius: 6px;
+    --control-radius: 4px;
+
+    --shadow-card: 0 8px 30px -4px rgba(0, 0, 0, 0.8), 0 0 0 1px var(--border-subtle);
+    --hardware-screw: radial-gradient(circle, #64748b 35%, #334155 65%, #0f172a 100%);
+}
+
+/* 2. DARK: Obsidian Slate (Nordic Minimalist Audio Architecture) */
+[data-theme="dark_obsidian"] {
+    --bg-primary: #0b0f17;
+    --bg-secondary: #101622;
+    --bg-card: #151d2c;
+    --bg-card-hover: #1b2538;
+    --bg-card-header: #172030;
+    --bg-panel: #151d2c;
+    --bg-input: #0b0f17;
+    --bg-well: #080c13;
+    --bg-viewport: #06090e;
+
+    --color-target: #38bdf8;
+    --color-target-glow: rgba(56, 189, 248, 0.35);
+    --color-ref: #fb923c;
+    --color-ref-glow: rgba(251, 146, 60, 0.35);
+    --color-match: #34d399;
+    --color-match-glow: rgba(52, 211, 153, 0.35);
+    --color-mastered: #818cf8;
+    --color-mastered-glow: rgba(129, 140, 248, 0.35);
+    --color-danger: #f87171;
+
+    --font-heading: 'Plus Jakarta Sans', sans-serif;
+    --font-body: 'Plus Jakarta Sans', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
 
     --text-primary: #f8fafc;
     --text-secondary: #94a3b8;
     --text-muted: #64748b;
     --text-dim: #475569;
 
-    --border-subtle: rgba(255, 255, 255, 0.09);
-    --border-bright: rgba(255, 255, 255, 0.18);
-    --border-highlight: rgba(0, 240, 255, 0.55);
+    --border-subtle: rgba(255, 255, 255, 0.08);
+    --border-bright: rgba(56, 189, 248, 0.28);
+    --border-highlight: rgba(56, 189, 248, 0.6);
 
-    --shadow-card: 0 12px 36px -6px rgba(0, 0, 0, 0.7), 0 0 0 1px var(--border-subtle);
-    --hardware-bevel: inset 0 1px 0 rgba(255, 255, 255, 0.12), inset 0 -1px 0 rgba(0, 0, 0, 0.8), 0 4px 14px rgba(0, 0, 0, 0.5);
-    --hardware-screw: radial-gradient(circle, #475569 35%, #1e293b 65%, #0f172a 100%);
-    --vfd-glow: 0 0 14px rgba(0, 240, 255, 0.45);
+    --card-radius: 10px;
+    --control-radius: 6px;
+
+    --shadow-card: 0 10px 32px -4px rgba(0, 0, 0, 0.85), 0 0 0 1px var(--border-subtle);
+    --hardware-screw: radial-gradient(circle, #94a3b8 35%, #475569 65%, #1e293b 100%);
 }
+
+/* 3. DARK: Vintage Bronze & Espresso (Aged Tube Console Warmth) */
+[data-theme="dark_espresso"] {
+    --bg-primary: #120e0c;
+    --bg-secondary: #1a1411;
+    --bg-card: #221a16;
+    --bg-card-hover: #2c221c;
+    --bg-card-header: #261e19;
+    --bg-panel: #221a16;
+    --bg-input: #120e0c;
+    --bg-well: #0c0908;
+    --bg-viewport: #0a0706;
+
+    --color-target: #f59e0b;
+    --color-target-glow: rgba(245, 158, 11, 0.4);
+    --color-ref: #ea580c;
+    --color-ref-glow: rgba(234, 88, 12, 0.4);
+    --color-match: #10b981;
+    --color-match-glow: rgba(16, 185, 129, 0.4);
+    --color-mastered: #d97706;
+    --color-mastered-glow: rgba(217, 119, 6, 0.4);
+    --color-danger: #dc2626;
+
+    --font-heading: 'DM Sans', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+
+    --text-primary: #fef3c7;
+    --text-secondary: #d4c5b9;
+    --text-muted: #8c7e75;
+    --text-dim: #5c4e46;
+
+    --border-subtle: rgba(245, 158, 11, 0.16);
+    --border-bright: rgba(245, 158, 11, 0.32);
+    --border-highlight: rgba(245, 158, 11, 0.65);
+
+    --card-radius: 12px;
+    --control-radius: 6px;
+
+    --shadow-card: 0 10px 32px -4px rgba(10, 6, 4, 0.9), 0 0 0 1px var(--border-subtle);
+    --hardware-screw: radial-gradient(circle, #d97706 35%, #78350f 65%, #291205 100%);
+}
+
+/* 4. DARK: Carbon Matrix & Cyber Lime (Motorsport Telemetry & High-Tech) */
+[data-theme="dark_carbon"] {
+    --bg-primary: #0e1114;
+    --bg-secondary: #13171c;
+    --bg-card: #181d24;
+    --bg-card-hover: #20262f;
+    --bg-card-header: #1a2028;
+    --bg-panel: #181d24;
+    --bg-input: #0e1114;
+    --bg-well: #090b0d;
+    --bg-viewport: #07090b;
+
+    --color-target: #a3e635;
+    --color-target-glow: rgba(163, 230, 53, 0.45);
+    --color-ref: #facc15;
+    --color-ref-glow: rgba(250, 204, 21, 0.45);
+    --color-match: #4ade80;
+    --color-match-glow: rgba(74, 222, 128, 0.45);
+    --color-mastered: #22d3ee;
+    --color-mastered-glow: rgba(34, 211, 238, 0.45);
+    --color-danger: #f43f5e;
+
+    --font-heading: 'Space Grotesk', sans-serif;
+    --font-body: 'Space Grotesk', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    --text-dim: #475569;
+
+    --border-subtle: rgba(163, 230, 53, 0.16);
+    --border-bright: rgba(163, 230, 53, 0.38);
+    --border-highlight: rgba(163, 230, 53, 0.7);
+
+    --card-radius: 3px;
+    --control-radius: 2px;
+
+    --shadow-card: 0 8px 28px -4px rgba(0, 0, 0, 0.85), 0 0 0 1px var(--border-subtle);
+    --hardware-screw: radial-gradient(circle, #64748b 35%, #1e293b 65%, #020617 100%);
+}
+
+/* 5. DARK: Royal Amethyst & Violet (Luxury Boutique French Audio) */
+[data-theme="dark_amethyst"] {
+    --bg-primary: #0f0a1a;
+    --bg-secondary: #150e24;
+    --bg-card: #1c1330;
+    --bg-card-hover: #251940;
+    --bg-card-header: #1f1435;
+    --bg-panel: #1c1330;
+    --bg-input: #0f0a1a;
+    --bg-well: #0a0612;
+    --bg-viewport: #08050e;
+
+    --color-target: #c084fc;
+    --color-target-glow: rgba(192, 132, 252, 0.45);
+    --color-ref: #f43f5e;
+    --color-ref-glow: rgba(244, 63, 94, 0.45);
+    --color-match: #a855f7;
+    --color-match-glow: rgba(168, 85, 247, 0.45);
+    --color-mastered: #e879f9;
+    --color-mastered-glow: rgba(232, 121, 249, 0.45);
+    --color-danger: #ef4444;
+
+    --font-heading: 'Outfit', sans-serif;
+    --font-body: 'Outfit', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+
+    --text-primary: #faf5ff;
+    --text-secondary: #d8b4fe;
+    --text-muted: #8b5cf6;
+    --text-dim: #5b21b6;
+
+    --border-subtle: rgba(192, 132, 252, 0.16);
+    --border-bright: rgba(192, 132, 252, 0.36);
+    --border-highlight: rgba(192, 132, 252, 0.7);
+
+    --card-radius: 14px;
+    --control-radius: 8px;
+
+    --shadow-card: 0 12px 36px -4px rgba(8, 4, 16, 0.9), 0 0 0 1px var(--border-subtle);
+    --hardware-screw: radial-gradient(circle, #a855f7 35%, #581c87 65%, #1e0936 100%);
+}
+
+/* ==========================================================================
+   5 NIGHT MODES (Zero Light Bleed, Cyberpunk, Deep Sea, Darkroom, Aurora)
+   ========================================================================== */
+
+/* 6. NIGHT: OLED Pure Pitch (Zero Light Bleed, Surgical Tech Monospace) */
+[data-theme="night_oled"] {
+    --bg-primary: #000000;
+    --bg-secondary: #050505;
+    --bg-card: #0a0a0a;
+    --bg-card-hover: #121212;
+    --bg-card-header: #0e0e0e;
+    --bg-panel: #0a0a0a;
+    --bg-input: #000000;
+    --bg-well: #020202;
+    --bg-viewport: #000000;
+
+    --color-target: #00f0ff;
+    --color-target-glow: rgba(0, 240, 255, 0.55);
+    --color-ref: #ffaa00;
+    --color-ref-glow: rgba(255, 170, 0, 0.55);
+    --color-match: #00ffaa;
+    --color-match-glow: rgba(0, 255, 170, 0.55);
+    --color-mastered: #b866ff;
+    --color-mastered-glow: rgba(184, 102, 255, 0.55);
+    --color-danger: #ff3344;
+
+    --font-heading: 'Space Grotesk', sans-serif;
+    --font-body: 'JetBrains Mono', monospace;
+    --font-mono: 'JetBrains Mono', monospace;
+
+    --text-primary: #ffffff;
+    --text-secondary: #a3a3a3;
+    --text-muted: #666666;
+    --text-dim: #3a3a3a;
+
+    --border-subtle: rgba(255, 255, 255, 0.14);
+    --border-bright: rgba(255, 255, 255, 0.35);
+    --border-highlight: rgba(0, 240, 255, 0.75);
+
+    --card-radius: 2px;
+    --control-radius: 2px;
+
+    --shadow-card: 0 0 0 1px rgba(255, 255, 255, 0.16), 0 8px 30px rgba(0, 0, 0, 1.0);
+    --shadow-recessed: inset 0 2px 8px rgba(0, 0, 0, 0.95), inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+    --hardware-screw: radial-gradient(circle, #525252 35%, #262626 65%, #0a0a0a 100%);
+}
+
+/* 7. NIGHT: Cyberpunk Neo-Tokyo (Neon Lasers & Holographic High Energy) */
+[data-theme="night_cyberpunk"] {
+    --bg-primary: #04020a;
+    --bg-secondary: #090514;
+    --bg-card: #100822;
+    --bg-card-hover: #190e34;
+    --bg-card-header: #140a2a;
+    --bg-panel: #100822;
+    --bg-input: #04020a;
+    --bg-well: #020106;
+    --bg-viewport: #020105;
+
+    --color-target: #00ffff;
+    --color-target-glow: rgba(0, 255, 255, 0.65);
+    --color-ref: #ff007f;
+    --color-ref-glow: rgba(255, 0, 127, 0.65);
+    --color-match: #00ff88;
+    --color-match-glow: rgba(0, 255, 136, 0.65);
+    --color-mastered: #ffe600;
+    --color-mastered-glow: rgba(255, 230, 0, 0.65);
+    --color-danger: #ff0055;
+
+    --font-heading: 'Syne', sans-serif;
+    --font-body: 'Syne', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+
+    --text-primary: #ffffff;
+    --text-secondary: #e0b0ff;
+    --text-muted: #8a55cc;
+    --text-dim: #4d2380;
+
+    --border-subtle: rgba(0, 255, 255, 0.22);
+    --border-bright: rgba(255, 0, 127, 0.50);
+    --border-highlight: rgba(0, 255, 255, 0.85);
+
+    --card-radius: 8px;
+    --control-radius: 4px;
+
+    --shadow-card: 0 10px 36px -4px rgba(4, 2, 10, 0.95), 0 0 15px rgba(0, 255, 255, 0.12), 0 0 0 1px var(--border-subtle);
+    --hardware-screw: radial-gradient(circle, #ff007f 35%, #7a003d 65%, #15000b 100%);
+}
+
+/* 8. NIGHT: Deep Mariana Abyss (Bioluminescent Trench & Marine Azure) */
+[data-theme="night_abyss"] {
+    --bg-primary: #02050e;
+    --bg-secondary: #050b1a;
+    --bg-card: #091228;
+    --bg-card-hover: #0e1b3a;
+    --bg-card-header: #0c1630;
+    --bg-panel: #091228;
+    --bg-input: #02050e;
+    --bg-well: #010309;
+    --bg-viewport: #010207;
+
+    --color-target: #00e5ff;
+    --color-target-glow: rgba(0, 229, 255, 0.55);
+    --color-ref: #38bdf8;
+    --color-ref-glow: rgba(56, 189, 248, 0.55);
+    --color-match: #00f5a0;
+    --color-match-glow: rgba(0, 245, 160, 0.55);
+    --color-mastered: #60a5fa;
+    --color-mastered-glow: rgba(96, 165, 250, 0.55);
+    --color-danger: #f43f5e;
+
+    --font-heading: 'Outfit', sans-serif;
+    --font-body: 'Outfit', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+
+    --text-primary: #f0f9ff;
+    --text-secondary: #7dd3fc;
+    --text-muted: #0284c7;
+    --text-dim: #034f78;
+
+    --border-subtle: rgba(0, 229, 255, 0.18);
+    --border-bright: rgba(0, 229, 255, 0.45);
+    --border-highlight: rgba(0, 229, 255, 0.8);
+
+    --card-radius: 12px;
+    --control-radius: 6px;
+
+    --shadow-card: 0 12px 40px -4px rgba(1, 3, 9, 0.95), 0 0 20px rgba(0, 229, 255, 0.1), 0 0 0 1px var(--border-subtle);
+    --hardware-screw: radial-gradient(circle, #00e5ff 35%, #0369a1 65%, #082f49 100%);
+}
+
+/* 9. NIGHT: Crimson Darkroom (Astrophotography Red Shift & Zero Eye Strain) */
+[data-theme="night_crimson"] {
+    --bg-primary: #080203;
+    --bg-secondary: #0f0406;
+    --bg-card: #18070a;
+    --bg-card-hover: #220a0f;
+    --bg-card-header: #1c080d;
+    --bg-panel: #18070a;
+    --bg-input: #080203;
+    --bg-well: #040102;
+    --bg-viewport: #030101;
+
+    --color-target: #ff1e40;
+    --color-target-glow: rgba(255, 30, 64, 0.55);
+    --color-ref: #ff6b00;
+    --color-ref-glow: rgba(255, 107, 0, 0.55);
+    --color-match: #ff4d6d;
+    --color-match-glow: rgba(255, 77, 109, 0.55);
+    --color-mastered: #ff0055;
+    --color-mastered-glow: rgba(255, 0, 85, 0.55);
+    --color-danger: #ff0033;
+
+    --font-heading: 'Space Grotesk', sans-serif;
+    --font-body: 'Inter', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+
+    --text-primary: #ffe4e6;
+    --text-secondary: #fda4af;
+    --text-muted: #9f1239;
+    --text-dim: #4c0519;
+
+    --border-subtle: rgba(255, 30, 64, 0.22);
+    --border-bright: rgba(255, 30, 64, 0.50);
+    --border-highlight: rgba(255, 30, 64, 0.85);
+
+    --card-radius: 4px;
+    --control-radius: 2px;
+
+    --shadow-card: 0 10px 32px -4px rgba(4, 1, 2, 0.95), 0 0 16px rgba(255, 30, 64, 0.12), 0 0 0 1px var(--border-subtle);
+    --hardware-screw: radial-gradient(circle, #e11d48 35%, #881337 65%, #2a030b 100%);
+}
+
+/* 10. NIGHT: Aurora Borealis Nocturne (Polar Emerald & Spectral Violet) */
+[data-theme="night_aurora"] {
+    --bg-primary: #020b08;
+    --bg-secondary: #05140f;
+    --bg-card: #081e17;
+    --bg-card-hover: #0d2c22;
+    --bg-card-header: #0b241c;
+    --bg-panel: #081e17;
+    --bg-input: #020b08;
+    --bg-well: #010604;
+    --bg-viewport: #010503;
+
+    --color-target: #00ff9d;
+    --color-target-glow: rgba(0, 255, 157, 0.55);
+    --color-ref: #38bdf8;
+    --color-ref-glow: rgba(56, 189, 248, 0.55);
+    --color-match: #34d399;
+    --color-match-glow: rgba(52, 211, 153, 0.55);
+    --color-mastered: #c084fc;
+    --color-mastered-glow: rgba(192, 132, 252, 0.55);
+    --color-danger: #f87171;
+
+    --font-heading: 'Plus Jakarta Sans', sans-serif;
+    --font-body: 'Plus Jakarta Sans', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+
+    --text-primary: #ecfdf5;
+    --text-secondary: #a7f3d0;
+    --text-muted: #059669;
+    --text-dim: #064e3b;
+
+    --border-subtle: rgba(0, 255, 157, 0.20);
+    --border-bright: rgba(0, 255, 157, 0.45);
+    --border-highlight: rgba(0, 255, 157, 0.85);
+
+    --card-radius: 16px;
+    --control-radius: 8px;
+
+    --shadow-card: 0 12px 40px -4px rgba(1, 6, 4, 0.95), 0 0 20px rgba(0, 255, 157, 0.12), 0 0 0 1px var(--border-subtle);
+    --hardware-screw: radial-gradient(circle, #10b981 35%, #065f46 65%, #022c22 100%);
+}
+
+/* ==========================================================================
+   GLOBAL RESET & DYNAMIC THEMED BODY ATMOSPHERES
+   ========================================================================== */
 
 *, *::before, *::after {
     box-sizing: border-box;
@@ -103,26 +495,91 @@
 
 body {
     background-color: var(--bg-primary);
-    background-image: 
-        radial-gradient(circle at 10% 5%, rgba(2, 132, 199, 0.04) 0%, transparent 40%),
-        radial-gradient(circle at 90% 10%, rgba(217, 119, 6, 0.04) 0%, transparent 40%),
-        linear-gradient(180deg, #edf2f7 0%, #e2e8f0 100%);
-    background-attachment: fixed;
     color: var(--text-primary);
     font-family: var(--font-body);
-    font-size: 14px;
+    font-size: 13px;
     line-height: 1.5;
     min-height: 100vh;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overflow-x: hidden;
+    transition: background-color var(--transition-normal), color var(--transition-normal);
 }
 
-[data-theme="dark"] body {
-    background-color: #07090f;
+/* Atmospheric Background Gradients for each theme */
+[data-theme="dark"],
+[data-theme="dark_studio"] body {
+    background-color: #0a0d14;
     background-image: 
-        radial-gradient(circle at 20% 0%, rgba(0, 240, 255, 0.05) 0%, transparent 50%),
-        radial-gradient(circle at 80% 0%, rgba(245, 158, 11, 0.05) 0%, transparent 50%),
-        radial-gradient(circle at 50% 100%, rgba(16, 185, 129, 0.04) 0%, transparent 60%),
-        linear-gradient(180deg, #06080e 0%, #0a0e18 50%, #06080e 100%);
+        radial-gradient(circle at 20% 0%, rgba(0, 229, 255, 0.03) 0%, transparent 50%),
+        radial-gradient(circle at 80% 0%, rgba(245, 158, 11, 0.03) 0%, transparent 50%),
+        linear-gradient(180deg, #07090e 0%, #0d121c 50%, #07090e 100%);
+}
+
+[data-theme="dark_obsidian"] body {
+    background-color: #0b0f17;
+    background-image: 
+        radial-gradient(circle at 30% 0%, rgba(56, 189, 248, 0.04) 0%, transparent 50%),
+        linear-gradient(180deg, #080c13 0%, #101622 50%, #080c13 100%);
+}
+
+[data-theme="dark_espresso"] body {
+    background-color: #120e0c;
+    background-image: 
+        radial-gradient(circle at 20% 0%, rgba(245, 158, 11, 0.05) 0%, transparent 50%),
+        radial-gradient(circle at 80% 10%, rgba(234, 88, 12, 0.04) 0%, transparent 50%),
+        linear-gradient(180deg, #0c0908 0%, #1a1411 50%, #0c0908 100%);
+}
+
+[data-theme="dark_carbon"] body {
+    background-color: #0e1114;
+    background-image: 
+        radial-gradient(circle at 20% 0%, rgba(163, 230, 53, 0.04) 0%, transparent 50%),
+        radial-gradient(circle at 80% 0%, rgba(250, 204, 21, 0.03) 0%, transparent 50%),
+        linear-gradient(180deg, #090b0d 0%, #13171c 50%, #090b0d 100%);
+}
+
+[data-theme="dark_amethyst"] body {
+    background-color: #0f0a1a;
+    background-image: 
+        radial-gradient(circle at 20% 0%, rgba(192, 132, 252, 0.05) 0%, transparent 50%),
+        radial-gradient(circle at 80% 10%, rgba(244, 63, 94, 0.04) 0%, transparent 50%),
+        linear-gradient(180deg, #0a0612 0%, #150e24 50%, #0a0612 100%);
+}
+
+[data-theme="night_oled"] body {
+    background-color: #000000 !important;
+    background-image: none !important;
+}
+
+[data-theme="night_cyberpunk"] body {
+    background-color: #04020a;
+    background-image: 
+        radial-gradient(circle at 15% 0%, rgba(0, 255, 255, 0.07) 0%, transparent 50%),
+        radial-gradient(circle at 85% 0%, rgba(255, 0, 127, 0.07) 0%, transparent 50%),
+        linear-gradient(180deg, #020106 0%, #0a0516 50%, #020106 100%);
+}
+
+[data-theme="night_abyss"] body {
+    background-color: #02050e;
+    background-image: 
+        radial-gradient(circle at 20% 0%, rgba(0, 229, 255, 0.06) 0%, transparent 50%),
+        radial-gradient(circle at 80% 0%, rgba(0, 245, 160, 0.04) 0%, transparent 50%),
+        linear-gradient(180deg, #010309 0%, #050b1a 50%, #010309 100%);
+}
+
+[data-theme="night_crimson"] body {
+    background-color: #080203;
+    background-image: 
+        radial-gradient(circle at 20% 0%, rgba(255, 30, 64, 0.07) 0%, transparent 50%),
+        radial-gradient(circle at 80% 10%, rgba(255, 107, 0, 0.04) 0%, transparent 50%),
+        linear-gradient(180deg, #040102 0%, #0f0406 50%, #040102 100%);
+}
+
+[data-theme="night_aurora"] body {
+    background-color: #020b08;
+    background-image: 
+        radial-gradient(circle at 25% 0%, rgba(0, 255, 157, 0.07) 0%, transparent 55%),
+        radial-gradient(circle at 75% 0%, rgba(192, 132, 252, 0.05) 0%, transparent 55%),
+        linear-gradient(180deg, #010604 0%, #05140f 50%, #010604 100%);
 }

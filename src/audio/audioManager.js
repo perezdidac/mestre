@@ -307,7 +307,7 @@ export class AudioManager {
 
     /**
      * Professional Studio Monitor Matrix Switcher
-     * @param {'stereo' | 'mono' | 'sides' | 'delta'} mode 
+     * @param {'stereo' | 'mono' | 'mid' | 'sides' | 'left_solo' | 'right_solo' | 'delta'} mode 
      */
     setMonitorMatrix(mode) {
         this.monitorMatrix = mode;
@@ -319,8 +319,8 @@ export class AudioManager {
             return;
         }
 
-        if (mode === 'mono') {
-            // Mono: (L + R) * 0.5 to both Left and Right channels
+        if (mode === 'mono' || mode === 'mid') {
+            // Mono / Mid Solo: (L + R) * 0.5 to both Left and Right speakers
             this.gLL.gain.setTargetAtTime(0.5, now, rampTime);
             this.gRL.gain.setTargetAtTime(0.5, now, rampTime);
             this.gLR.gain.setTargetAtTime(0.5, now, rampTime);
@@ -331,6 +331,18 @@ export class AudioManager {
             this.gRL.gain.setTargetAtTime(-0.5, now, rampTime);
             this.gLR.gain.setTargetAtTime(-0.5, now, rampTime);
             this.gRR.gain.setTargetAtTime(0.5, now, rampTime);
+        } else if (mode === 'left_solo') {
+            // Left Channel Solo: Routed to center (both speakers)
+            this.gLL.gain.setTargetAtTime(1.0, now, rampTime);
+            this.gRL.gain.setTargetAtTime(0.0, now, rampTime);
+            this.gLR.gain.setTargetAtTime(1.0, now, rampTime);
+            this.gRR.gain.setTargetAtTime(0.0, now, rampTime);
+        } else if (mode === 'right_solo') {
+            // Right Channel Solo: Routed to center (both speakers)
+            this.gLL.gain.setTargetAtTime(0.0, now, rampTime);
+            this.gRL.gain.setTargetAtTime(1.0, now, rampTime);
+            this.gLR.gain.setTargetAtTime(0.0, now, rampTime);
+            this.gRR.gain.setTargetAtTime(1.0, now, rampTime);
         } else {
             // Normal Stereo or Delta: 1:1 discrete channel mapping
             this.gLL.gain.setTargetAtTime(1.0, now, rampTime);
@@ -635,5 +647,37 @@ export class AudioManager {
         this.analyserL.getFloatTimeDomainData(left);
         this.analyserR.getFloatTimeDomainData(right);
         return { left, right };
+    }
+
+    /**
+     * Compute Real-Time Pearson Phase Correlation Coefficient (-1.0 to +1.0)
+     * r = +1.0 (Mono compatible / in-phase)
+     * r = 0.0 (Wide decorrelated stereo)
+     * r = -1.0 (180 deg out of phase / mono cancellation)
+     */
+    getPhaseCorrelation() {
+        if (!this.analyserL || !this.analyserR) return 1.0;
+        const left = new Float32Array(this.analyserL.fftSize);
+        const right = new Float32Array(this.analyserR.fftSize);
+        this.analyserL.getFloatTimeDomainData(left);
+        this.analyserR.getFloatTimeDomainData(right);
+
+        let sumLR = 0;
+        let sumL2 = 0;
+        let sumR2 = 0;
+        const len = left.length;
+
+        for (let i = 0; i < len; i++) {
+            const l = left[i];
+            const r = right[i];
+            sumLR += l * r;
+            sumL2 += l * l;
+            sumR2 += r * r;
+        }
+
+        const denom = Math.sqrt(sumL2 * sumR2);
+        if (denom < 1e-5) return 1.0;
+        const r = sumLR / denom;
+        return Math.max(-1.0, Math.min(1.0, r));
     }
 }

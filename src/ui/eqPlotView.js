@@ -5,10 +5,12 @@
  */
 
 export class EqPlotView {
-    constructor(canvasElement, onBandChange = null) {
+    constructor(canvasElement, onBandChange = null, onCommitChange = null) {
         this.canvas = canvasElement;
         this.ctx = canvasElement.getContext('2d');
         this.onBandChange = onBandChange;
+        this.onCommitChange = onCommitChange;
+        this.wheelDebounceTimer = null;
 
         this.minFreq = 20;
         this.maxFreq = 20000;
@@ -232,6 +234,11 @@ export class EqPlotView {
                 this.emitBandChange(targetIdx);
                 this.draw();
                 this.updateHudContent(targetIdx);
+
+                if (this.wheelDebounceTimer) clearTimeout(this.wheelDebounceTimer);
+                this.wheelDebounceTimer = setTimeout(() => {
+                    this.onCommitChange?.(`Pro-Q: ${b.name} Band Q`);
+                }, 300);
             }
         }, { passive: false });
 
@@ -261,7 +268,11 @@ export class EqPlotView {
         });
 
         window.addEventListener('mouseup', () => {
-            this.isDragging = false;
+            if (this.isDragging) {
+                this.isDragging = false;
+                const bandName = (this.activeBandIndex >= 0 && this.bands[this.activeBandIndex]) ? this.bands[this.activeBandIndex].name : 'Band';
+                this.onCommitChange?.(`Pro-Q: Move ${bandName} Node`);
+            }
         });
 
         window.addEventListener('resize', () => this.resize());
@@ -281,6 +292,7 @@ export class EqPlotView {
             btn.addEventListener('click', () => {
                 const preset = btn.getAttribute('data-preset');
                 this.applyPreset(preset);
+                this.onCommitChange?.(`Pro-Q Preset: ${preset}`);
             });
         });
     }
