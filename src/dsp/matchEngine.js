@@ -14,6 +14,7 @@ export class MatchEngine {
         this.maxCutDb = -12.0;  // Safety limit
         this.targetLoudnessOffsetDb = 0.0;
         this.activeDifferenceData = null;
+        this.manualBandGains = new Float32Array(ISO_31_BANDS.length);
     }
 
     setMatchAmount(amount) {
@@ -27,6 +28,12 @@ export class MatchEngine {
     setLimits(maxBoostDb, maxCutDb) {
         this.maxBoostDb = Math.max(1.0, maxBoostDb);
         this.maxCutDb = Math.min(-1.0, maxCutDb);
+    }
+
+    setManualBandGain(bandIndex, gainDb) {
+        if (bandIndex >= 0 && bandIndex < ISO_31_BANDS.length) {
+            this.manualBandGains[bandIndex] = gainDb;
+        }
     }
 
     /**
@@ -43,27 +50,16 @@ export class MatchEngine {
      * @returns {Array<{b0, b1, b2, a1, a2, enabled, freq, gainDb, q}>}
      */
     computeBiquadCoefficients(sampleRate = 48000) {
-        if (!this.activeDifferenceData) {
-            // Flat pass-through
-            return ISO_31_BANDS.map(freq => ({
-                b0: 1.0, b1: 0.0, b2: 0.0,
-                a1: 0.0, a2: 0.0,
-                enabled: false,
-                freq: freq,
-                gainDb: 0.0,
-                q: 1.8
-            }));
-        }
-
-        const deltaGains = this.activeDifferenceData.smoothedDeltaDb;
+        const deltaGains = this.activeDifferenceData ? this.activeDifferenceData.smoothedDeltaDb : null;
         const filters = [];
 
         for (let i = 0; i < ISO_31_BANDS.length; i++) {
             const freq = ISO_31_BANDS[i];
-            const rawGain = deltaGains[i] || 0.0;
+            const rawDelta = deltaGains ? deltaGains[i] : 0.0;
+            const manual = this.manualBandGains[i] || 0.0;
 
-            // Scale by match amount
-            let scaledGain = rawGain * this.matchAmount;
+            // Scaled difference + manual adjustment
+            let scaledGain = rawDelta * this.matchAmount + manual;
 
             // Apply safety mastering clamps
             scaledGain = Math.max(this.maxCutDb, Math.min(this.maxBoostDb, scaledGain));

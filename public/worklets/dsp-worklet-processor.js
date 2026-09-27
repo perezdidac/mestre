@@ -115,20 +115,21 @@ class DSPMasteringProcessor extends AudioWorkletProcessor {
 
     async initWasm(source, sampleRate) {
         try {
-            let module;
-            if (source instanceof WebAssembly.Module) {
-                module = source;
-            } else if (source instanceof ArrayBuffer || ArrayBuffer.isView(source)) {
-                module = await WebAssembly.compile(source);
+            let instance;
+            if (source && (source instanceof ArrayBuffer || source.byteLength !== undefined)) {
+                const res = await WebAssembly.instantiate(source);
+                instance = res.instance || res;
+            } else if (source && source.buffer && (source.buffer instanceof ArrayBuffer || source.buffer.byteLength !== undefined)) {
+                const res = await WebAssembly.instantiate(source.buffer);
+                instance = res.instance || res;
+            } else if (source) {
+                const res = await WebAssembly.instantiate(source);
+                instance = res.instance || res;
             } else {
-                throw new Error('Invalid WASM binary source provided to AudioWorklet');
+                throw new Error('No WASM binary source provided to AudioWorklet');
             }
 
-            this.wasmInstance = await WebAssembly.instantiate(module, {
-                env: {
-                    abort: () => console.error('WASM aborted')
-                }
-            });
+            this.wasmInstance = instance;
 
             this.wasmExports = this.wasmInstance.exports;
             this.wasmMemory = this.wasmExports.memory;

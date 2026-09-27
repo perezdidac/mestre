@@ -142,11 +142,16 @@ export class AudioManager {
      * @param {'mastered' | 'target_dry' | 'reference'} source 
      */
     setMonitorSource(source) {
+        const prevSource = this.monitorSource;
         this.monitorSource = source;
         this.updateBusGains();
 
-        // If currently playing, ensure correct buffer is playing smoothly at current time offset
-        if (this.isPlaying) {
+        // Only reload buffer playback if transitioning to/from the Reference track!
+        // Switching between 'mastered' and 'target_dry' uses the exact same target buffer and crossfades seamlessly in real-time.
+        const needsBufferSwap = (prevSource === 'reference' && source !== 'reference') ||
+                                (prevSource !== 'reference' && source === 'reference');
+
+        if (this.isPlaying && needsBufferSwap) {
             const curTime = this.getCurrentTime();
             this.startBufferPlayback(curTime);
         }
@@ -299,6 +304,7 @@ export class AudioManager {
 
             // 2. Wasm Worklet DSP node (for Mastered Target)
             if (this.wasmBridge && this.wasmBridge.getWorkletNode()) {
+                this.connectWasmNode();
                 this.sourceNode.connect(this.wasmBridge.getWorkletNode());
             }
         }

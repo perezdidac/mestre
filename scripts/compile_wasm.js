@@ -1,6 +1,10 @@
-const fs = require('fs');
-const path = require('path');
-const wabtModule = require('wabt');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import wabtModule from 'wabt';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 async function compileWasm() {
     console.log('[Wasm Builder] Initializing WABT...');
@@ -89,13 +93,13 @@ async function compileWasm() {
             (f32.store (i32.add (global.get $STATE_BASE) (i32.const 24)) (f32.const 0.05))
             (f32.store (i32.add (global.get $STATE_BASE) (i32.const 28)) (f32.const 0.002))
             (f32.store (i32.add (global.get $STATE_BASE) (i32.const 32)) (f32.const 1.0))
-            (f32.store (i32.add (global.get $STATE_BASE) (i32.const 36)) (f32.const 0.0))
+            (f32.store (i32.add (global.get $STATE_BASE) (i32.const 36)) (f32.const 1.0))
             (f32.store (i32.add (global.get $STATE_BASE) (i32.const 40)) (f32.const 0.0))
 
-            ;; Set default limiter: ceiling 0.977 (-0.2dB), release 0.001, lookahead 192 (4ms), softClip 1, envGain 1.0
+            ;; Set default limiter: ceiling 0.977 (-0.2dB), release 0.001, lookahead 0 (zero latency), softClip 1, envGain 1.0
             (f32.store (i32.add (global.get $STATE_BASE) (i32.const 44)) (f32.const 0.9772372))
             (f32.store (i32.add (global.get $STATE_BASE) (i32.const 48)) (f32.const 0.001))
-            (i32.store (i32.add (global.get $STATE_BASE) (i32.const 52)) (i32.const 192))
+            (i32.store (i32.add (global.get $STATE_BASE) (i32.const 52)) (i32.const 0))
             (i32.store (i32.add (global.get $STATE_BASE) (i32.const 56)) (i32.const 1))
             (i32.store (i32.add (global.get $STATE_BASE) (i32.const 60)) (i32.const 0))
             (f32.store (i32.add (global.get $STATE_BASE) (i32.const 64)) (f32.const 1.0))
@@ -157,6 +161,8 @@ async function compileWasm() {
         (func (export "dsp_reset")
             (call $reset_filters)
             (call $reset_limiter)
+            (f32.store (i32.add (global.get $STATE_BASE) (i32.const 36)) (f32.const 1.0))
+            (f32.store (i32.add (global.get $STATE_BASE) (i32.const 64)) (f32.const 1.0))
         )
 
         ;; Export: Set Bypass
@@ -209,6 +215,11 @@ async function compileWasm() {
             (f32.store (i32.add (global.get $STATE_BASE) (i32.const 24)) (local.get $attCoeff))
             (f32.store (i32.add (global.get $STATE_BASE) (i32.const 28)) (local.get $relCoeff))
             (f32.store (i32.add (global.get $STATE_BASE) (i32.const 32)) (local.get $makeupLin))
+            (if (f32.le (f32.load (i32.add (global.get $STATE_BASE) (i32.const 36))) (f32.const 0.0001))
+                (then
+                    (f32.store (i32.add (global.get $STATE_BASE) (i32.const 36)) (f32.const 1.0))
+                )
+            )
         )
 
         ;; Export: Set Limiter parameters
@@ -219,6 +230,11 @@ async function compileWasm() {
             (f32.store (i32.add (global.get $STATE_BASE) (i32.const 48)) (local.get $relCoeff))
             (i32.store (i32.add (global.get $STATE_BASE) (i32.const 52)) (local.get $lookahead))
             (i32.store (i32.add (global.get $STATE_BASE) (i32.const 56)) (local.get $softClip))
+            (if (f32.le (f32.load (i32.add (global.get $STATE_BASE) (i32.const 64))) (f32.const 0.0001))
+                (then
+                    (f32.store (i32.add (global.get $STATE_BASE) (i32.const 64)) (f32.const 1.0))
+                )
+            )
         )
 
         ;; Buffer Pointer Exports
@@ -416,16 +432,23 @@ async function compileWasm() {
                             (f32.store (i32.add (global.get $LIM_RING_L) (i32.mul (local.get $limIdx) (i32.const 4))) (local.get $inL))
                             (f32.store (i32.add (global.get $LIM_RING_R) (i32.mul (local.get $limIdx) (i32.const 4))) (local.get $inR))
 
-                            ;; Read delayed sample
-                            (local.set $limReadIdx (i32.sub (local.get $limIdx) (local.get $limLookahead)))
-                            (if (i32.lt_s (local.get $limReadIdx) (i32.const 0))
+                            ;; Read delayed sample (direct if lookahead is 0)
+                            (if (i32.le_s (local.get $limLookahead) (i32.const 0))
                                 (then
-                                    (local.set $limReadIdx (i32.add (local.get $limReadIdx) (i32.const 1024)))
+                                    (local.set $delayedL (local.get $inL))
+                                    (local.set $delayedR (local.get $inR))
+                                )
+                                (else
+                                    (local.set $limReadIdx (i32.sub (local.get $limIdx) (local.get $limLookahead)))
+                                    (if (i32.lt_s (local.get $limReadIdx) (i32.const 0))
+                                        (then
+                                            (local.set $limReadIdx (i32.add (local.get $limReadIdx) (i32.const 1024)))
+                                        )
+                                    )
+                                    (local.set $delayedL (f32.load (i32.add (global.get $LIM_RING_L) (i32.mul (local.get $limReadIdx) (i32.const 4)))))
+                                    (local.set $delayedR (f32.load (i32.add (global.get $LIM_RING_R) (i32.mul (local.get $limReadIdx) (i32.const 4)))))
                                 )
                             )
-
-                            (local.set $delayedL (f32.load (i32.add (global.get $LIM_RING_L) (i32.mul (local.get $limReadIdx) (i32.const 4)))))
-                            (local.set $delayedR (f32.load (i32.add (global.get $LIM_RING_R) (i32.mul (local.get $limReadIdx) (i32.const 4)))))
 
                             ;; Advance ring pointer (modulo 1024)
                             (local.set $limIdx (i32.rem_u (i32.add (local.get $limIdx) (i32.const 1)) (i32.const 1024)))

@@ -401,21 +401,8 @@ class MasteringApp {
     }
 
     handleManualBandEdit(bandIndex, bandData) {
-        const sr = this.audioMgr.ctx ? this.audioMgr.ctx.sampleRate : 48000;
-        const biquad = this.matchEngine.calcRbjBiquad('peaking', sr, bandData.freq, bandData.gainDb, bandData.q);
-        if (this.audioMgr.wasmBridge) {
-            const filters = this.matchEngine.computeBiquadCoefficients(sr);
-            filters[bandIndex] = {
-                ...biquad,
-                freq: bandData.freq,
-                gainDb: bandData.gainDb,
-                q: bandData.q,
-                enabled: Math.abs(bandData.gainDb) > 0.1
-            };
-            this.audioMgr.wasmBridge.setAllEqBands(filters);
-            const evalPoints = this.matchEngine.evaluateMagnitudeResponse(filters, 256, sr);
-            this.spectrumView.setEqResponsePoints(evalPoints);
-        }
+        this.matchEngine.setManualBandGain(bandIndex, bandData.gainDb);
+        this.recomputeAndPushFilters();
     }
 
     recomputeAndPushFilters() {
@@ -423,6 +410,10 @@ class MasteringApp {
         const filters = this.matchEngine.computeBiquadCoefficients(sr);
         if (this.audioMgr.wasmBridge) {
             this.audioMgr.wasmBridge.setAllEqBands(filters);
+        } else {
+            this.audioMgr.ensureContext().then(() => {
+                if (this.audioMgr.wasmBridge) this.audioMgr.wasmBridge.setAllEqBands(filters);
+            });
         }
 
         const evalPoints = this.matchEngine.evaluateMagnitudeResponse(filters, 256, sr);
@@ -434,18 +425,30 @@ class MasteringApp {
     handleInputGainChange(gainDb) {
         if (this.audioMgr.wasmBridge) {
             this.audioMgr.wasmBridge.setInputGain(gainDb);
+        } else {
+            this.audioMgr.ensureContext().then(() => {
+                if (this.audioMgr.wasmBridge) this.audioMgr.wasmBridge.setInputGain(gainDb);
+            });
         }
     }
 
     handleCompressorChange(threshDb, ratio) {
         if (this.audioMgr.wasmBridge) {
             this.audioMgr.wasmBridge.setCompressor(threshDb, ratio, 25.0, 150.0, 6.0, 0.0);
+        } else {
+            this.audioMgr.ensureContext().then(() => {
+                if (this.audioMgr.wasmBridge) this.audioMgr.wasmBridge.setCompressor(threshDb, ratio, 25.0, 150.0, 6.0, 0.0);
+            });
         }
     }
 
     handleLimiterChange(ceilingDb) {
         if (this.audioMgr.wasmBridge) {
             this.audioMgr.wasmBridge.setLimiter(ceilingDb, 80.0, 4.0, true);
+        } else {
+            this.audioMgr.ensureContext().then(() => {
+                if (this.audioMgr.wasmBridge) this.audioMgr.wasmBridge.setLimiter(ceilingDb, 80.0, 4.0, true);
+            });
         }
     }
 
@@ -520,6 +523,7 @@ class MasteringApp {
     }
 
     setupAnimationLoop() {
+        let meteringAttached = false;
         const loop = () => {
             if (this.audioMgr.isPlaying && this.audioMgr.ctx) {
                 // Update real-time RTA spectrum
@@ -527,11 +531,12 @@ class MasteringApp {
                 const dataTarget = this.audioMgr.getFrequencyData(this.audioMgr.analyserTarget);
                 this.spectrumView.setRealtimeData(dataTarget, dataMastered);
 
-                // Update Wasm GR telemetry into meter bridge
-                if (this.audioMgr.wasmBridge) {
+                // Attach Wasm GR telemetry into meter bridge once
+                if (this.audioMgr.wasmBridge && !meteringAttached) {
                     this.audioMgr.wasmBridge.setMeteringCallback((m) => {
                         this.metersView.updateRealtimeMasterTelemetry(m.compGR, m.limGR);
                     });
+                    meteringAttached = true;
                 }
             }
             requestAnimationFrame(loop);
