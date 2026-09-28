@@ -1,8 +1,4 @@
-/**
- * Audio File Loader & Ingestion Engine
- * Reads audio files entirely in client-side memory (ArrayBuffer) without server uploads.
- * Decodes via Web Audio API and generates waveform peak profiles for instant rendering.
- */
+import { LUFSMeter } from '../dsp/lufsMeter.js';
 
 export class AudioLoader {
     constructor(audioContext) {
@@ -28,7 +24,7 @@ export class AudioLoader {
         const bufferCopy = arrayBuffer.slice(0);
         const audioBuffer = await this.audioCtx.decodeAudioData(bufferCopy);
 
-        if (onProgress) onProgress(0.9, 'Generating waveform peaks...');
+        if (onProgress) onProgress(0.8, 'Generating waveform peaks & peak levels...');
         const waveformPeaks = this.extractWaveformPeaks(audioBuffer, 1000);
 
         const durationSec = audioBuffer.duration;
@@ -37,6 +33,21 @@ export class AudioLoader {
         const durationFormatted = `${mins}:${secs}`;
 
         const sizeMb = (file.size / (1024 * 1024)).toFixed(2);
+
+        // Compute ITU-R BS.1770-4 Loudness & Dynamics
+        let lufs = -16.0;
+        let lra = 6.0;
+        let dynamicRangeDb = Math.max(0, waveformPeaks.peakDb - waveformPeaks.rmsDb);
+        try {
+            if (onProgress) onProgress(0.9, 'Calculating BS.1770-4 loudness telemetry...');
+            const lufsMeter = new LUFSMeter();
+            const dynamics = lufsMeter.analyzeAudioBuffer(audioBuffer);
+            lufs = dynamics.integratedLUFS;
+            lra = dynamics.lra;
+            dynamicRangeDb = dynamics.dynamicRangeDb;
+        } catch (e) {
+            console.warn('[AudioLoader] Fast LUFS measurement fallback:', e.message);
+        }
 
         return {
             name: file.name,
@@ -48,12 +59,20 @@ export class AudioLoader {
             sampleRate: audioBuffer.sampleRate,
             numberOfChannels: audioBuffer.numberOfChannels,
             audioBuffer: audioBuffer,
-            waveformPeaks: waveformPeaks
+            waveformPeaks: waveformPeaks,
+            peakLinear: waveformPeaks.maxPeakLinear,
+            peakDb: waveformPeaks.peakDb,
+            rmsDb: waveformPeaks.rmsDb,
+            lufs: lufs,
+            dynamicRangeDb: dynamicRangeDb,
+            lra: lra,
+            clippedSamples: waveformPeaks.clippedSamples
         };
     }
 
     /**
      * Extract min/max amplitude peaks for high-resolution waveform visualization
+     * Also computes true global sample peak and RMS across all channels
      * @param {AudioBuffer} audioBuffer 
      * @param {number} numBins Number of vertical peak bars across waveform
      */
@@ -67,6 +86,10 @@ export class AudioLoader {
         const peaksMax = new Float32Array(numBins);
         const peaksRms = new Float32Array(numBins);
 
+        let globalMax = 0.0;
+        let globalSumSq = 0.0;
+        let clippedCount = 0;
+
         for (let bin = 0; bin < numBins; bin++) {
             const start = bin * samplesPerBin;
             const end = Math.min(totalSamples, start + samplesPerBin);
@@ -77,7 +100,18 @@ export class AudioLoader {
             let count = 0;
 
             for (let i = start; i < end; i++) {
-                const sample = 0.5 * (channelL[i] + channelR[i]);
+                const sL = channelL[i];
+                const sR = channelR[i];
+
+                const absL = Math.abs(sL);
+                const absR = Math.abs(sR);
+                if (absL > globalMax) globalMax = absL;
+                if (absR > globalMax) globalMax = absR;
+                if (absL >= 0.9999 || absR >= 0.9999) clippedCount++;
+
+                globalSumSq += sL * sL + sR * sR;
+
+                const sample = 0.5 * (sL + sR);
                 if (sample < min) min = sample;
                 if (sample > max) max = sample;
                 sumSq += sample * sample;
@@ -89,11 +123,20 @@ export class AudioLoader {
             peaksRms[bin] = count > 0 ? Math.sqrt(sumSq / count) : 0;
         }
 
+        const totalScanned = totalSamples * (audioBuffer.numberOfChannels > 1 ? 2 : 1);
+        const overallRms = totalScanned > 0 ? Math.sqrt(globalSumSq / totalScanned) : 0;
+        const peakDb = globalMax > 1e-6 ? 20.0 * Math.log10(globalMax) : -120.0;
+        const rmsDb = overallRms > 1e-6 ? 20.0 * Math.log10(overallRms) : -120.0;
+
         return {
             peaksMin,
             peaksMax,
             peaksRms,
-            numBins
+            numBins,
+            maxPeakLinear: globalMax,
+            peakDb: Math.round(peakDb * 100) / 100,
+            rmsDb: Math.round(rmsDb * 100) / 100,
+            clippedSamples: clippedCount
         };
     }
 
@@ -175,6 +218,17 @@ export class AudioLoader {
         }
 
         const peaks = this.extractWaveformPeaks(audioBuffer, 1000);
+        let lufs = -16.0;
+        let lra = 6.0;
+        let dynamicRangeDb = Math.max(0, peaks.peakDb - peaks.rmsDb);
+        try {
+            const lufsMeter = new LUFSMeter();
+            const dynamics = lufsMeter.analyzeAudioBuffer(audioBuffer);
+            lufs = dynamics.integratedLUFS;
+            lra = dynamics.lra;
+            dynamicRangeDb = dynamics.dynamicRangeDb;
+        } catch (_) {}
+
         return {
             name: type === 'target' ? 'Demo_Unmastered_Target.wav' : 'Demo_Commercial_Reference.wav',
             sizeBytes: numSamples * 4 * 2,
@@ -185,7 +239,14 @@ export class AudioLoader {
             sampleRate: sampleRate,
             numberOfChannels: 2,
             audioBuffer: audioBuffer,
-            waveformPeaks: peaks
+            waveformPeaks: peaks,
+            peakLinear: peaks.maxPeakLinear,
+            peakDb: peaks.peakDb,
+            rmsDb: peaks.rmsDb,
+            lufs: lufs,
+            dynamicRangeDb: dynamicRangeDb,
+            lra: lra,
+            clippedSamples: peaks.clippedSamples
         };
     }
 }

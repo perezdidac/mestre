@@ -667,34 +667,45 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(3, 7, 18, 0.85);
+    background: rgba(3, 7, 18, 0.88);
     backdrop-filter: blur(12px);
     z-index: 2000;
-    align-items: center;
-    justify-content: center;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 24px 16px;
+    box-sizing: border-box;
 }
 
 .modal-backdrop.visible {
     display: flex;
+    align-items: flex-start;
+    justify-content: center;
 }
 
 .modal-dialog {
     background: var(--bg-card, #0d1322);
     border: 1px solid var(--border-bright);
     border-radius: var(--card-radius, 16px);
-    padding: 28px;
     width: 90%;
-    max-width: 480px;
+    max-width: 520px;
+    max-height: calc(100vh - 48px);
+    max-height: calc(100dvh - 48px);
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 35px var(--color-target-glow);
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    margin: auto;
+    overflow: hidden;
+    position: relative;
+    box-sizing: border-box;
 }
 
 .modal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    padding: 20px 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    flex-shrink: 0;
 }
 
 .modal-title {
@@ -708,6 +719,36 @@
     display: flex;
     flex-direction: column;
     gap: 16px;
+    padding: 20px 24px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    flex: 1 1 auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.25) transparent;
+}
+
+.modal-body::-webkit-scrollbar {
+    width: 6px;
+}
+.modal-body::-webkit-scrollbar-track {
+    background: transparent;
+}
+.modal-body::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+}
+.modal-body::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.35);
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 16px 24px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    flex-shrink: 0;
 }
 
 .form-group {
@@ -1137,14 +1178,89 @@
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), 0 4px 14px rgba(2, 132, 199, 0.6);
 }
 
+/* Quality Inspector Trigger Button & Live Compliance Badge */
+.btn-quality-inspector {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-weight: 700;
+    position: relative;
+}
+
+.badge-quality {
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    font-weight: 800;
+    padding: 1px 6px;
+    border-radius: 4px;
+    letter-spacing: 0.05em;
+    background: rgba(148, 163, 184, 0.2);
+    color: #94a3b8;
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    transition: var(--transition-fast);
+}
+
+.badge-quality.badge-pass {
+    background: rgba(16, 185, 129, 0.25);
+    color: #34d399;
+    border-color: rgba(16, 185, 129, 0.45);
+}
+
+.badge-quality.badge-warn {
+    background: rgba(245, 158, 11, 0.28);
+    color: #fbbf24;
+    border-color: rgba(245, 158, 11, 0.55);
+    animation: pulse-warn 2s infinite ease-in-out;
+}
+
+.badge-quality.badge-fail {
+    background: rgba(239, 68, 68, 0.28);
+    color: #f87171;
+    border-color: rgba(239, 68, 68, 0.55);
+    animation: pulse-fail 1.5s infinite ease-in-out;
+}
+
+@keyframes pulse-warn {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(0.96); }
+}
+
+@keyframes pulse-fail {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(0.94); }
+}
+
 /* Quality Inspector Modal Dialog & Metrics */
 .quality-modal-dialog {
-    max-width: 680px;
+    max-width: 860px;
+    width: 95%;
+    max-height: calc(100vh - 40px);
+    max-height: calc(100dvh - 40px);
     background: #0a0e19 url('/textures/studio_metal.jpg');
     background-size: cover;
     background-blend-mode: overlay;
     border: 1px solid rgba(255, 255, 255, 0.2);
     box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9), 0 0 40px rgba(6, 182, 212, 0.2);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.quality-modal-body {
+    padding: 20px 24px;
+    gap: 20px;
+    overflow-y: auto;
+    flex: 1 1 auto;
+}
+
+.quality-modal-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 16px 24px;
+    flex-shrink: 0;
 }
 
 .quality-title-row {
@@ -1166,14 +1282,20 @@
 
 .quality-metric-cards {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 10px;
     margin-bottom: 20px;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 840px) {
     .quality-metric-cards {
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 520px) {
+    .quality-metric-cards {
+        grid-template-columns: repeat(2, 1fr);
     }
 }
 
@@ -1346,6 +1468,157 @@
     background: rgba(148, 163, 184, 0.1);
     border: 1px solid rgba(148, 163, 184, 0.25);
     color: #cbd5e1;
+}
+
+/* Frequency Balance & Spectrum Health Styles */
+.quality-block-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-bottom: 8px;
+    margin-bottom: 12px;
+}
+
+.freq-balance-tag {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 800;
+    padding: 3px 10px;
+    border-radius: 4px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.freq-balance-tag.tag-pass {
+    background: rgba(16, 185, 129, 0.15);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.35);
+}
+
+.freq-balance-tag.tag-warn {
+    background: rgba(245, 158, 11, 0.15);
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+.freq-balance-tag.tag-fail {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+.freq-balance-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 10px;
+}
+
+@media (max-width: 840px) {
+    .freq-balance-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    .freq-balance-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.freq-band-card {
+    background: rgba(15, 23, 42, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.5);
+    transition: var(--transition-fast);
+}
+
+.freq-band-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+}
+
+.freq-band-name {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 800;
+    color: #f1f5f9;
+}
+
+.freq-band-hz {
+    font-size: 9.5px;
+    color: #94a3b8;
+    font-family: var(--font-mono);
+}
+
+.freq-meter-track {
+    width: 100%;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    position: relative;
+    overflow: hidden;
+}
+
+.freq-meter-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.25s ease, background-color 0.25s ease;
+}
+
+.freq-meter-fill.status-pass {
+    background: linear-gradient(90deg, #10b981 0%, #34d399 100%);
+}
+
+.freq-meter-fill.status-warn {
+    background: linear-gradient(90deg, #f59e0b 0%, #fbbf24 100%);
+}
+
+.freq-meter-fill.status-fail {
+    background: linear-gradient(90deg, #ef4444 0%, #f87171 100%);
+}
+
+.freq-band-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 10px;
+}
+
+.freq-band-val {
+    font-family: var(--font-mono);
+    color: #cbd5e1;
+    font-variant-numeric: tabular-nums;
+    font-size: 10.5px;
+}
+
+.freq-band-status {
+    font-family: var(--font-mono);
+    font-size: 9.5px;
+    font-weight: 800;
+    padding: 1px 4px;
+    border-radius: 3px;
+}
+
+.freq-band-status.status-pass {
+    color: #34d399;
+    background: rgba(16, 185, 129, 0.15);
+}
+
+.freq-band-status.status-warn {
+    color: #fbbf24;
+    background: rgba(245, 158, 11, 0.15);
+}
+
+.freq-band-status.status-fail {
+    color: #f87171;
+    background: rgba(239, 68, 68, 0.15);
 }
 
 /* Keyboard Shortcuts Modal Dialog */

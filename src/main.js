@@ -329,6 +329,7 @@ class MasteringApp {
                 if (this.modularRackView) this.modularRackView.render();
             }
         });
+        this.qualityInspector.updateStatusBadge();
         const btnOpenQuality = document.getElementById('btn-open-quality-inspector');
         if (btnOpenQuality) {
             btnOpenQuality.addEventListener('click', () => {
@@ -948,12 +949,34 @@ class MasteringApp {
         document.getElementById('spec-target-sr').textContent = `${(track.sampleRate / 1000).toFixed(1)} kHz`;
         document.getElementById('spec-target-format').textContent = track.format;
         document.getElementById('spec-target-size').textContent = track.sizeFormatted;
-        document.getElementById('target-deck-meta').textContent = `${track.numberOfChannels === 2 ? 'Stereo' : 'Mono'} • Ready`;
+
+        const peakLinear = track.peakLinear != null ? track.peakLinear : 1.0;
+        const peakDb = track.peakDb != null ? track.peakDb : 0.0;
+        let metaNotice = 'Ready';
+        if (peakLinear < 0.25) {
+            metaNotice = `Peak ${peakDb.toFixed(1)} dBFS (${(peakLinear * 100).toFixed(0)}%) • ⚠️ Under-Modulated`;
+        } else if (peakLinear < 0.5) {
+            metaNotice = `Peak ${peakDb.toFixed(1)} dBFS (${(peakLinear * 100).toFixed(0)}%) • ⚠️ Low Headroom`;
+        } else if (peakDb > -0.05) {
+            metaNotice = `Peak ${peakDb.toFixed(1)} dBFS • ⚠️ Clipping`;
+        }
+        document.getElementById('target-deck-meta').textContent = `${track.numberOfChannels === 2 ? 'Stereo' : 'Mono'} • ${metaNotice}`;
 
         this.targetAnalysis = null;
         if (this.modularRackView && this.audioMgr.rack && !this.modularRackView.rack) {
             this.modularRackView.setRackEngine(this.audioMgr.rack);
         }
+
+        // Notify Pre-Flight Quality Inspector of new track
+        if (this.qualityInspector) {
+            this.qualityInspector.cachedAnalysis = null;
+            this.qualityInspector.cachedTrack = null;
+            this.qualityInspector.updateStatusBadge();
+            if (this.qualityInspector.isOpen) {
+                this.qualityInspector.analyzeAndRender();
+            }
+        }
+
         this.checkReadyToMatch();
     }
 
