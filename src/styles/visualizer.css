@@ -129,6 +129,13 @@
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
 }
 
+.btn-eq-preset.active {
+    background: rgba(0, 240, 255, 0.16);
+    color: #00f0ff;
+    border-color: rgba(0, 240, 255, 0.55);
+    box-shadow: 0 0 10px rgba(0, 240, 255, 0.25);
+}
+
 .eq-plot-canvas-container {
     position: relative;
     width: 100%;

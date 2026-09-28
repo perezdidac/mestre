@@ -704,11 +704,11 @@
     box-sizing: border-box;
 }
 
-/* EQ Bands 7-Band Grid */
+/* Pro Studio EQ 8-Band Mastering Grid */
 .eq-bands-grid {
     display: grid;
-    grid-template-columns: repeat(7, minmax(78px, 1fr));
-    gap: 10px;
+    grid-template-columns: repeat(8, minmax(72px, 1fr));
+    gap: 8px;
     padding-top: 10px;
     padding-bottom: 6px;
     border-top: 1px solid var(--border-subtle);

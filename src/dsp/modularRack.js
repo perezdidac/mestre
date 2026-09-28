@@ -337,13 +337,14 @@ export class ModularMasteringRack {
         dryGain.connect(output);
 
         const bandsConfig = initialParams.bands || [
-            { id: 'sub', type: 'lowshelf', freq: 40, gain: 0.0, q: 0.71, enabled: true },
-            { id: 'low', type: 'peaking', freq: 120, gain: 0.0, q: 1.4, enabled: true },
-            { id: 'low_mid', type: 'peaking', freq: 350, gain: 0.0, q: 1.4, enabled: true },
-            { id: 'mid', type: 'peaking', freq: 1000, gain: 0.0, q: 1.4, enabled: true },
-            { id: 'high_mid', type: 'peaking', freq: 3200, gain: 0.0, q: 1.4, enabled: true },
-            { id: 'presence', type: 'peaking', freq: 6500, gain: 0.0, q: 1.4, enabled: true },
-            { id: 'air', type: 'highshelf', freq: 12000, gain: 0.0, q: 0.71, enabled: true }
+            { id: 'sub', type: 'lowshelf', freq: 32, gain: 0.0, q: 0.71, enabled: true },
+            { id: 'low', type: 'peaking', freq: 80, gain: 0.0, q: 1.41, enabled: true },
+            { id: 'low_mid', type: 'peaking', freq: 250, gain: 0.0, q: 1.41, enabled: true },
+            { id: 'mid', type: 'peaking', freq: 650, gain: 0.0, q: 1.41, enabled: true },
+            { id: 'high_mid', type: 'peaking', freq: 1800, gain: 0.0, q: 1.41, enabled: true },
+            { id: 'presence', type: 'peaking', freq: 4500, gain: 0.0, q: 1.41, enabled: true },
+            { id: 'brilliance', type: 'peaking', freq: 9000, gain: 0.0, q: 1.41, enabled: true },
+            { id: 'air', type: 'highshelf', freq: 14000, gain: 0.0, q: 0.71, enabled: true }
         ];
 
         // Create biquad nodes
@@ -403,6 +404,12 @@ export class ModularMasteringRack {
                     biquadNodes[bandIndex].config.q = q;
                     biquadNodes[bandIndex].node.Q.setTargetAtTime(q, now, 0.02);
                 }
+            } else if (paramName === 'bandType') {
+                const { bandIndex, type } = value;
+                if (biquadNodes[bandIndex]) {
+                    biquadNodes[bandIndex].config.type = type;
+                    biquadNodes[bandIndex].node.type = type;
+                }
             } else if (paramName === 'bandToggle') {
                 const { bandIndex, enabled } = value;
                 if (biquadNodes[bandIndex]) {
@@ -411,18 +418,26 @@ export class ModularMasteringRack {
                     biquadNodes[bandIndex].node.gain.setTargetAtTime(targetGain, now, 0.02);
                 }
             } else if (paramName === 'allBands') {
-                // Apply array of band values
-                for (let i = 0; i < Math.min(biquadNodes.length, value.length); i++) {
-                    const cfg = value[i];
-                    biquadNodes[i].config.gain = cfg.gain;
-                    biquadNodes[i].config.freq = cfg.freq || biquadNodes[i].config.freq;
-                    biquadNodes[i].config.q = cfg.q || biquadNodes[i].config.q;
-                    biquadNodes[i].config.enabled = cfg.enabled !== undefined ? cfg.enabled : true;
+                // Apply array of band values by matching ID or index
+                value.forEach((cfg, i) => {
+                    let target = biquadNodes.find(bn => bn.config.id === cfg.id);
+                    if (!target && i < biquadNodes.length) target = biquadNodes[i];
+                    if (!target) return;
 
-                    const effectiveGain = biquadNodes[i].config.enabled ? (biquadNodes[i].config.gain * params.matchAmount) : 0.0;
-                    biquadNodes[i].node.gain.setTargetAtTime(effectiveGain, now, 0.02);
-                    biquadNodes[i].node.frequency.setTargetAtTime(biquadNodes[i].config.freq, now, 0.02);
-                }
+                    if (cfg.gain !== undefined) target.config.gain = cfg.gain;
+                    if (cfg.freq !== undefined) target.config.freq = cfg.freq;
+                    if (cfg.q !== undefined) target.config.q = cfg.q;
+                    if (cfg.type !== undefined) {
+                        target.config.type = cfg.type;
+                        target.node.type = cfg.type;
+                    }
+                    if (cfg.enabled !== undefined) target.config.enabled = cfg.enabled;
+
+                    const effectiveGain = target.config.enabled ? (target.config.gain * params.matchAmount) : 0.0;
+                    target.node.gain.setTargetAtTime(effectiveGain, now, 0.02);
+                    target.node.frequency.setTargetAtTime(target.config.freq, now, 0.02);
+                    target.node.Q.setTargetAtTime(target.config.q, now, 0.02);
+                });
             }
         };
 
@@ -1603,19 +1618,25 @@ export class ModularMasteringRack {
     applyReferenceMatch(differenceData, matchAmount = 1.0) {
         // 1. Find Match EQ module
         const eqMod = this.modules.find(m => m.type === 'parametric_eq');
-        if (eqMod && differenceData && differenceData.smoothedDeltaDb) {
-            const bands = [
-                { id: 'sub', freq: 40, gain: differenceData.smoothedDeltaDb[1] || 0 },
-                { id: 'low', freq: 120, gain: differenceData.smoothedDeltaDb[6] || 0 },
-                { id: 'low_mid', freq: 350, gain: differenceData.smoothedDeltaDb[11] || 0 },
-                { id: 'mid', freq: 1000, gain: differenceData.smoothedDeltaDb[16] || 0 },
-                { id: 'high_mid', freq: 3200, gain: differenceData.smoothedDeltaDb[21] || 0 },
-                { id: 'presence', freq: 6500, gain: differenceData.smoothedDeltaDb[25] || 0 },
-                { id: 'air', freq: 12000, gain: differenceData.smoothedDeltaDb[28] || 0 }
-            ];
+        if (eqMod) {
+            if (eqMod.bypassed) {
+                this.setModuleBypass(eqMod.id, false);
+            }
+            if (differenceData && differenceData.smoothedDeltaDb) {
+                const bands = [
+                    { id: 'sub', freq: 32, gain: differenceData.smoothedDeltaDb[2] || 0 },
+                    { id: 'low', freq: 80, gain: differenceData.smoothedDeltaDb[6] || 0 },
+                    { id: 'low_mid', freq: 250, gain: differenceData.smoothedDeltaDb[11] || 0 },
+                    { id: 'mid', freq: 650, gain: differenceData.smoothedDeltaDb[15] || 0 },
+                    { id: 'high_mid', freq: 1800, gain: differenceData.smoothedDeltaDb[20] || 0 },
+                    { id: 'presence', freq: 4500, gain: differenceData.smoothedDeltaDb[24] || 0 },
+                    { id: 'brilliance', freq: 9000, gain: differenceData.smoothedDeltaDb[27] || 0 },
+                    { id: 'air', freq: 14000, gain: differenceData.smoothedDeltaDb[29] || 0 }
+                ];
 
-            eqMod.setParam('allBands', bands);
-            eqMod.setParam('matchAmount', matchAmount);
+                eqMod.setParam('allBands', bands);
+                eqMod.setParam('matchAmount', matchAmount);
+            }
         }
 
         // 2. Find Master Compressor module

@@ -221,6 +221,9 @@ class MasteringApp {
             },
             (description) => {
                 this.historyManager.pushSnapshot(description);
+            },
+            (bands) => {
+                this.handleAllBandsEdit(bands);
             }
         );
 
@@ -1064,7 +1067,7 @@ class MasteringApp {
             const evalPoints = this.matchEngine.evaluateMagnitudeResponse(filters, 256, this.audioMgr.ctx.sampleRate);
             this.spectrumView.setDifferenceData(this.differenceData, this.matchEngine.matchAmount);
             this.spectrumView.setEqResponsePoints(evalPoints);
-            this.eqPlotView.setBands(filters);
+            this.updateVisualizersFromRack();
 
             // 7. Snap UI parameter sliders to matched values
             const suggestedInputDrive = Math.max(-6, Math.min(8, this.differenceData.deltaLoudnessDb));
@@ -1117,13 +1120,19 @@ class MasteringApp {
         if (eqMod && eqMod.params && eqMod.params.bands) {
             const sr = this.audioMgr.ctx ? this.audioMgr.ctx.sampleRate : 48000;
             const matchAmt = eqMod.params.matchAmount !== undefined ? eqMod.params.matchAmount : 1.0;
-            const filters = eqMod.params.bands.map(b => ({
-                id: b.id,
-                type: b.type,
-                freq: b.freq,
-                gainDb: b.enabled ? (b.gain * matchAmt) : 0.0,
-                q: b.q
-            }));
+            const filters = eqMod.params.bands.map(b => {
+                const g = b.enabled ? (b.gain * matchAmt) : 0.0;
+                const coeffs = this.matchEngine.calcRbjBiquad(b.type, sr, b.freq, g, b.q);
+                return {
+                    id: b.id,
+                    type: b.type,
+                    freq: b.freq,
+                    gainDb: g,
+                    q: b.q,
+                    enabled: b.enabled,
+                    ...coeffs
+                };
+            });
             this.eqPlotView.setBands(filters);
             const evalPoints = this.matchEngine.evaluateMagnitudeResponse(filters, 256, sr);
             this.spectrumView.setEqResponsePoints(evalPoints);
@@ -1193,20 +1202,88 @@ class MasteringApp {
     }
 
     handleManualBandEdit(bandIndex, bandData) {
-        if (bandData.gainDb !== undefined) {
-            this.matchEngine.setManualBandGain(bandIndex, bandData.gainDb);
-        }
         if (this.audioMgr.rack) {
             const eqMod = this.audioMgr.rack.modules.find(m => m.type === 'parametric_eq');
-            if (eqMod && eqMod.params && eqMod.params.bands && eqMod.params.bands[bandIndex]) {
-                if (bandData.gainDb !== undefined) eqMod.setParam('bandGain', { bandIndex, gain: bandData.gainDb });
-                if (bandData.freq !== undefined) eqMod.setParam('bandFreq', { bandIndex, freq: bandData.freq });
-                if (bandData.q !== undefined) eqMod.setParam('bandQ', { bandIndex, q: bandData.q });
-                if (bandData.enabled !== undefined) eqMod.setParam('bandToggle', { bandIndex, enabled: bandData.enabled });
+            if (eqMod) {
+                // If user interacts with Pro-Q, automatically un-bypass so changes are immediately audible!
+                if (eqMod.bypassed) {
+                    this.audioMgr.rack.setModuleBypass(eqMod.id, false);
+                }
+                if (eqMod.params && eqMod.params.bands && eqMod.params.bands[bandIndex]) {
+                    if (bandData.gainDb !== undefined) eqMod.setParam('bandGain', { bandIndex, gain: bandData.gainDb });
+                    if (bandData.freq !== undefined) eqMod.setParam('bandFreq', { bandIndex, freq: bandData.freq });
+                    if (bandData.q !== undefined) eqMod.setParam('bandQ', { bandIndex, q: bandData.q });
+                    if (bandData.type !== undefined) eqMod.setParam('bandType', { bandIndex, type: bandData.type });
+                    if (bandData.enabled !== undefined) eqMod.setParam('bandToggle', { bandIndex, enabled: bandData.enabled });
+                }
                 if (this.modularRackView) this.modularRackView.render();
             }
         }
-        this.recomputeAndPushFilters();
+
+        // Live update spectrum visualizer and Wasm module with the 8 parametric bands
+        const sr = this.audioMgr.ctx ? this.audioMgr.ctx.sampleRate : 48000;
+        const biquadFilters = this.eqPlotView.bands.map(b => {
+            const g = b.enabled ? b.gainDb : 0.0;
+            const coeffs = this.matchEngine.calcRbjBiquad(b.type, sr, b.freq, g, b.q);
+            return {
+                ...coeffs,
+                id: b.id,
+                type: b.type,
+                freq: b.freq,
+                gainDb: g,
+                q: b.q,
+                enabled: b.enabled
+            };
+        });
+
+        const evalPoints = this.matchEngine.evaluateMagnitudeResponse(biquadFilters, 256, sr);
+        this.spectrumView.setEqResponsePoints(evalPoints);
+
+        if (this.audioMgr.wasmBridge) {
+            this.audioMgr.wasmBridge.setAllEqBands(biquadFilters);
+        }
+    }
+
+    handleAllBandsEdit(bands) {
+        if (this.audioMgr.rack) {
+            const eqMod = this.audioMgr.rack.modules.find(m => m.type === 'parametric_eq');
+            if (eqMod) {
+                if (eqMod.bypassed) {
+                    this.audioMgr.rack.setModuleBypass(eqMod.id, false);
+                }
+                eqMod.setParam('allBands', bands.map(b => ({
+                    id: b.id,
+                    type: b.type,
+                    freq: b.freq,
+                    gain: b.gainDb,
+                    q: b.q,
+                    enabled: b.enabled
+                })));
+                if (this.modularRackView) this.modularRackView.render();
+            }
+        }
+
+        const sr = this.audioMgr.ctx ? this.audioMgr.ctx.sampleRate : 48000;
+        const biquadFilters = this.eqPlotView.bands.map(b => {
+            const g = b.enabled ? b.gainDb : 0.0;
+            const coeffs = this.matchEngine.calcRbjBiquad(b.type, sr, b.freq, g, b.q);
+            return {
+                ...coeffs,
+                id: b.id,
+                type: b.type,
+                freq: b.freq,
+                gainDb: g,
+                q: b.q,
+                enabled: b.enabled
+            };
+        });
+
+        const evalPoints = this.matchEngine.evaluateMagnitudeResponse(biquadFilters, 256, sr);
+        this.spectrumView.setEqResponsePoints(evalPoints);
+
+        if (this.audioMgr.wasmBridge) {
+            this.audioMgr.wasmBridge.setAllEqBands(biquadFilters);
+        }
     }
 
     recomputeAndPushFilters() {
@@ -1223,7 +1300,6 @@ class MasteringApp {
         const evalPoints = this.matchEngine.evaluateMagnitudeResponse(filters, 256, sr);
         this.spectrumView.setDifferenceData(this.differenceData, this.matchEngine.matchAmount);
         this.spectrumView.setEqResponsePoints(evalPoints);
-        this.eqPlotView.setBands(filters);
     }
 
     handleInputGainChange(gainDb) {

@@ -647,7 +647,16 @@ export class ModularRackView {
         const bandsGrid = document.createElement('div');
         bandsGrid.className = 'eq-bands-grid';
 
-        const bandLabels = ['Sub (40Hz)', 'Low (120Hz)', 'Low-Mid (350Hz)', 'Mid (1kHz)', 'High-Mid (3.2kHz)', 'Presence (6.5kHz)', 'Air (12kHz)'];
+        const bandLabels = [
+            'Sub (32Hz)',
+            'Bass (80Hz)',
+            'Body (250Hz)',
+            'Mid (650Hz)',
+            'Vocal (1.8k)',
+            'Presence (4.5k)',
+            'Sheen (9k)',
+            'Air (14k)'
+        ];
 
         mod.params.bands.forEach((b, idx) => {
             const bandCol = document.createElement('div');

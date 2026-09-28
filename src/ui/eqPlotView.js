@@ -4,12 +4,24 @@
  * compound magnitude response curve, floating parameter HUD, and 1-click mastering presets.
  */
 
+export const DEFAULT_PRO_Q_BANDS = [
+    { id: 'sub', name: 'Sub', freq: 32, gainDb: 0.0, q: 0.71, type: 'lowshelf', enabled: true, color: '#00f0ff' },
+    { id: 'low', name: 'Bass', freq: 80, gainDb: 0.0, q: 1.41, type: 'peaking', enabled: true, color: '#38bdf8' },
+    { id: 'low_mid', name: 'Body', freq: 250, gainDb: 0.0, q: 1.41, type: 'peaking', enabled: true, color: '#10b981' },
+    { id: 'mid', name: 'Mid', freq: 650, gainDb: 0.0, q: 1.41, type: 'peaking', enabled: true, color: '#84cc16' },
+    { id: 'high_mid', name: 'Vocal', freq: 1800, gainDb: 0.0, q: 1.41, type: 'peaking', enabled: true, color: '#f59e0b' },
+    { id: 'presence', name: 'Presence', freq: 4500, gainDb: 0.0, q: 1.41, type: 'peaking', enabled: true, color: '#f97316' },
+    { id: 'brilliance', name: 'Sheen', freq: 9000, gainDb: 0.0, q: 1.41, type: 'peaking', enabled: true, color: '#a855f7' },
+    { id: 'air', name: 'Air', freq: 14000, gainDb: 0.0, q: 0.71, type: 'highshelf', enabled: true, color: '#ec4899' }
+];
+
 export class EqPlotView {
-    constructor(canvasElement, onBandChange = null, onCommitChange = null) {
+    constructor(canvasElement, onBandChange = null, onCommitChange = null, onAllBandsChange = null) {
         this.canvas = canvasElement;
         this.ctx = canvasElement.getContext('2d');
         this.onBandChange = onBandChange;
         this.onCommitChange = onCommitChange;
+        this.onAllBandsChange = onAllBandsChange;
         this.wheelDebounceTimer = null;
 
         this.minFreq = 20;
@@ -18,16 +30,7 @@ export class EqPlotView {
         this.maxDb = 18;
 
         // 8 Musical Mastering Bands
-        this.bands = [
-            { id: 'sub', name: 'Sub', freq: 32, gainDb: 0.0, q: 0.71, type: 'lowshelf', enabled: true, color: '#00f0ff' },
-            { id: 'low', name: 'Bass', freq: 80, gainDb: 0.0, q: 1.41, type: 'peaking', enabled: true, color: '#38bdf8' },
-            { id: 'low_mid', name: 'Body', freq: 250, gainDb: 0.0, q: 1.41, type: 'peaking', enabled: true, color: '#10b981' },
-            { id: 'mid', name: 'Mid', freq: 650, gainDb: 0.0, q: 1.41, type: 'peaking', enabled: true, color: '#84cc16' },
-            { id: 'high_mid', name: 'Vocal', freq: 1800, gainDb: 0.0, q: 1.41, type: 'peaking', enabled: true, color: '#f59e0b' },
-            { id: 'presence', name: 'Presence', freq: 4500, gainDb: 0.0, q: 1.41, type: 'peaking', enabled: true, color: '#f97316' },
-            { id: 'brilliance', name: 'Sheen', freq: 9000, gainDb: 0.0, q: 1.41, type: 'peaking', enabled: true, color: '#a855f7' },
-            { id: 'air', name: 'Air', freq: 14000, gainDb: 0.0, q: 0.71, type: 'highshelf', enabled: true, color: '#ec4899' }
-        ];
+        this.bands = DEFAULT_PRO_Q_BANDS.map(b => ({ ...b }));
 
         this.activeBandIndex = -1;
         this.hoverBandIndex = -1;
@@ -57,20 +60,25 @@ export class EqPlotView {
     }
 
     setBands(bandConfigs) {
-        if (Array.isArray(bandConfigs)) {
-            for (let i = 0; i < Math.min(this.bands.length, bandConfigs.length); i++) {
-                const cfg = bandConfigs[i];
-                if (cfg.freq) this.bands[i].freq = cfg.freq;
-                if (cfg.gainDb !== undefined) this.bands[i].gainDb = cfg.gainDb;
-                if (cfg.gain !== undefined) this.bands[i].gainDb = cfg.gain;
-                if (cfg.q !== undefined) this.bands[i].q = cfg.q;
-                if (cfg.type) this.bands[i].type = cfg.type;
-                if (cfg.enabled !== undefined) this.bands[i].enabled = cfg.enabled;
-            }
-            this.draw();
-            if (this.activeBandIndex !== -1) {
-                this.updateHudContent(this.activeBandIndex);
-            }
+        if (!Array.isArray(bandConfigs)) return;
+        // Never allow a 31-band graphic analyzer array to overwrite 8-band parametric frequencies!
+        if (bandConfigs.length > 12) return;
+
+        for (let i = 0; i < Math.min(this.bands.length, bandConfigs.length); i++) {
+            const cfg = bandConfigs[i];
+            let targetBand = this.bands.find(b => b.id === cfg.id) || this.bands[i];
+            if (!targetBand) continue;
+
+            if (cfg.freq !== undefined && cfg.freq >= 20 && cfg.freq <= 20000) targetBand.freq = cfg.freq;
+            if (cfg.gainDb !== undefined) targetBand.gainDb = cfg.gainDb;
+            if (cfg.gain !== undefined) targetBand.gainDb = cfg.gain;
+            if (cfg.q !== undefined && cfg.q > 0) targetBand.q = cfg.q;
+            if (cfg.type) targetBand.type = cfg.type;
+            if (cfg.enabled !== undefined) targetBand.enabled = cfg.enabled;
+        }
+        this.draw();
+        if (this.activeBandIndex !== -1) {
+            this.updateHudContent(this.activeBandIndex);
         }
     }
 
@@ -290,6 +298,8 @@ export class EqPlotView {
 
         presetContainer.querySelectorAll('.btn-eq-preset').forEach(btn => {
             btn.addEventListener('click', () => {
+                presetContainer.querySelectorAll('.btn-eq-preset').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
                 const preset = btn.getAttribute('data-preset');
                 this.applyPreset(preset);
                 this.onCommitChange?.(`Pro-Q Preset: ${preset}`);
@@ -298,65 +308,88 @@ export class EqPlotView {
     }
 
     applyPreset(presetName) {
-        switch (presetName) {
-            case 'flat':
-                this.bands.forEach(b => { b.gainDb = 0.0; b.enabled = true; });
-                break;
-            case 'air':
-                this.bands[0].gainDb = 0.0;
-                this.bands[1].gainDb = 0.5;
-                this.bands[2].gainDb = 0.0;
-                this.bands[3].gainDb = -0.5;
-                this.bands[4].gainDb = 0.5;
-                this.bands[5].gainDb = 1.0;
-                this.bands[6].gainDb = 2.0;
-                this.bands[7].gainDb = 3.5;
-                break;
-            case 'vocal':
-                this.bands[0].gainDb = -1.0;
-                this.bands[1].gainDb = 0.0;
-                this.bands[2].gainDb = -2.0;
-                this.bands[3].gainDb = -1.0;
-                this.bands[4].gainDb = 2.5;
-                this.bands[5].gainDb = 2.0;
-                this.bands[6].gainDb = 1.0;
-                this.bands[7].gainDb = 1.5;
-                break;
-            case 'punch':
-                this.bands[0].gainDb = 1.5;
-                this.bands[1].gainDb = 3.0;
-                this.bands[2].gainDb = -1.5;
-                this.bands[3].gainDb = 0.0;
-                this.bands[4].gainDb = 0.5;
-                this.bands[5].gainDb = 1.5;
-                this.bands[6].gainDb = 1.0;
-                this.bands[7].gainDb = 1.0;
-                break;
-            case 'demud':
-                this.bands[0].gainDb = 0.0;
-                this.bands[1].gainDb = 0.5;
-                this.bands[2].gainDb = -3.5; // De-mud 250Hz
-                this.bands[3].gainDb = -1.5;
-                this.bands[4].gainDb = 0.5;
-                this.bands[5].gainDb = 1.0;
-                this.bands[6].gainDb = 1.5;
-                this.bands[7].gainDb = 1.5;
-                break;
-            case 'smile':
-                this.bands[0].gainDb = 2.5;
-                this.bands[1].gainDb = 2.0;
-                this.bands[2].gainDb = -0.5;
-                this.bands[3].gainDb = -1.5;
-                this.bands[4].gainDb = -1.0;
-                this.bands[5].gainDb = 1.0;
-                this.bands[6].gainDb = 2.0;
-                this.bands[7].gainDb = 3.0;
-                break;
+        const PRESETS = {
+            flat: [
+                { id: 'sub', gainDb: 0.0, freq: 32, q: 0.71, type: 'lowshelf' },
+                { id: 'low', gainDb: 0.0, freq: 80, q: 1.41, type: 'peaking' },
+                { id: 'low_mid', gainDb: 0.0, freq: 250, q: 1.41, type: 'peaking' },
+                { id: 'mid', gainDb: 0.0, freq: 650, q: 1.41, type: 'peaking' },
+                { id: 'high_mid', gainDb: 0.0, freq: 1800, q: 1.41, type: 'peaking' },
+                { id: 'presence', gainDb: 0.0, freq: 4500, q: 1.41, type: 'peaking' },
+                { id: 'brilliance', gainDb: 0.0, freq: 9000, q: 1.41, type: 'peaking' },
+                { id: 'air', gainDb: 0.0, freq: 14000, q: 0.71, type: 'highshelf' }
+            ],
+            air: [
+                { id: 'sub', gainDb: 0.0, freq: 32, q: 0.71, type: 'lowshelf' },
+                { id: 'low', gainDb: 0.5, freq: 80, q: 1.41, type: 'peaking' },
+                { id: 'low_mid', gainDb: 0.0, freq: 250, q: 1.41, type: 'peaking' },
+                { id: 'mid', gainDb: -0.5, freq: 650, q: 1.41, type: 'peaking' },
+                { id: 'high_mid', gainDb: 0.5, freq: 1800, q: 1.41, type: 'peaking' },
+                { id: 'presence', gainDb: 1.5, freq: 4500, q: 1.41, type: 'peaking' },
+                { id: 'brilliance', gainDb: 2.5, freq: 9000, q: 1.41, type: 'peaking' },
+                { id: 'air', gainDb: 4.0, freq: 14000, q: 0.71, type: 'highshelf' }
+            ],
+            vocal: [
+                { id: 'sub', gainDb: -1.0, freq: 32, q: 0.71, type: 'lowshelf' },
+                { id: 'low', gainDb: 0.0, freq: 80, q: 1.41, type: 'peaking' },
+                { id: 'low_mid', gainDb: -2.0, freq: 250, q: 1.41, type: 'peaking' },
+                { id: 'mid', gainDb: -1.0, freq: 650, q: 1.41, type: 'peaking' },
+                { id: 'high_mid', gainDb: 2.5, freq: 1800, q: 1.41, type: 'peaking' },
+                { id: 'presence', gainDb: 2.0, freq: 4500, q: 1.41, type: 'peaking' },
+                { id: 'brilliance', gainDb: 1.0, freq: 9000, q: 1.41, type: 'peaking' },
+                { id: 'air', gainDb: 1.5, freq: 14000, q: 0.71, type: 'highshelf' }
+            ],
+            punch: [
+                { id: 'sub', gainDb: 1.5, freq: 32, q: 0.71, type: 'lowshelf' },
+                { id: 'low', gainDb: 3.0, freq: 80, q: 1.41, type: 'peaking' },
+                { id: 'low_mid', gainDb: -1.5, freq: 250, q: 1.41, type: 'peaking' },
+                { id: 'mid', gainDb: 0.0, freq: 650, q: 1.41, type: 'peaking' },
+                { id: 'high_mid', gainDb: 0.5, freq: 1800, q: 1.41, type: 'peaking' },
+                { id: 'presence', gainDb: 1.5, freq: 4500, q: 1.41, type: 'peaking' },
+                { id: 'brilliance', gainDb: 1.0, freq: 9000, q: 1.41, type: 'peaking' },
+                { id: 'air', gainDb: 1.0, freq: 14000, q: 0.71, type: 'highshelf' }
+            ],
+            demud: [
+                { id: 'sub', gainDb: 0.0, freq: 32, q: 0.71, type: 'lowshelf' },
+                { id: 'low', gainDb: 0.5, freq: 80, q: 1.41, type: 'peaking' },
+                { id: 'low_mid', gainDb: -3.5, freq: 250, q: 1.41, type: 'peaking' },
+                { id: 'mid', gainDb: -1.5, freq: 650, q: 1.41, type: 'peaking' },
+                { id: 'high_mid', gainDb: 0.5, freq: 1800, q: 1.41, type: 'peaking' },
+                { id: 'presence', gainDb: 1.0, freq: 4500, q: 1.41, type: 'peaking' },
+                { id: 'brilliance', gainDb: 1.5, freq: 9000, q: 1.41, type: 'peaking' },
+                { id: 'air', gainDb: 1.5, freq: 14000, q: 0.71, type: 'highshelf' }
+            ],
+            smile: [
+                { id: 'sub', gainDb: 2.5, freq: 32, q: 0.71, type: 'lowshelf' },
+                { id: 'low', gainDb: 2.0, freq: 80, q: 1.41, type: 'peaking' },
+                { id: 'low_mid', gainDb: -0.5, freq: 250, q: 1.41, type: 'peaking' },
+                { id: 'mid', gainDb: -1.5, freq: 650, q: 1.41, type: 'peaking' },
+                { id: 'high_mid', gainDb: -1.0, freq: 1800, q: 1.41, type: 'peaking' },
+                { id: 'presence', gainDb: 1.0, freq: 4500, q: 1.41, type: 'peaking' },
+                { id: 'brilliance', gainDb: 2.0, freq: 9000, q: 1.41, type: 'peaking' },
+                { id: 'air', gainDb: 3.0, freq: 14000, q: 0.71, type: 'highshelf' }
+            ]
+        };
+
+        const presetValues = PRESETS[presetName] || PRESETS.flat;
+        presetValues.forEach((p, i) => {
+            if (this.bands[i]) {
+                this.bands[i].gainDb = p.gainDb;
+                this.bands[i].freq = p.freq;
+                this.bands[i].q = p.q;
+                this.bands[i].type = p.type;
+                this.bands[i].enabled = true;
+            }
+        });
+
+        if (this.onAllBandsChange) {
+            this.onAllBandsChange(this.bands.map(b => ({ ...b })));
+        } else {
+            for (let i = 0; i < this.bands.length; i++) {
+                this.emitBandChange(i);
+            }
         }
 
-        for (let i = 0; i < this.bands.length; i++) {
-            this.emitBandChange(i);
-        }
         this.draw();
         if (this.activeBandIndex !== -1) {
             this.updateHudContent(this.activeBandIndex);
