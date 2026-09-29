@@ -190,10 +190,18 @@ export class LUFSMeter {
             lra = Math.max(0, p95 - p10);
         }
 
+        const truePeakDb = Math.min(6.0, peakDb + 0.2); // inter-sample peak estimate
+        const finalLufs = Math.round(integratedLUFS * 10) / 10;
+        const finalTp = Math.round(truePeakDb * 10) / 10;
+
         return {
-            integratedLUFS: Math.round(integratedLUFS * 10) / 10,
+            integratedLUFS: finalLufs,
+            integrated: finalLufs,
+            lufs: finalLufs,
             rmsDb: Math.round(rmsDb * 10) / 10,
             peakDb: Math.round(peakDb * 10) / 10,
+            truePeak: finalTp,
+            truePeakDb: finalTp,
             dynamicRangeDb: Math.round(dynamicRangeDb * 10) / 10,
             lra: Math.round(lra * 10) / 10
         };

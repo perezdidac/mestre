@@ -261,12 +261,24 @@ export class WaveformView {
         let badgeBorder = 'rgba(6, 182, 212, 0.4)';
 
         if (this.displayMode === 'comparison' && this.masteredPeaks) {
-            badgeText = `COMPARISON (CYAN: DRY | GOLD: MASTERED ${this.masteredStats ? `[${this.masteredStats.integrated.toFixed(1)} LUFS]` : ''})`;
+            const lufsVal = this.masteredStats?.integrated ?? this.masteredStats?.integratedLUFS ?? this.masteredStats?.lufs;
+            const lufsStr = (lufsVal !== undefined && lufsVal !== null && !isNaN(lufsVal))
+                ? ` [${Number(lufsVal).toFixed(1)} LUFS]`
+                : '';
+            badgeText = `COMPARISON (CYAN: DRY | GOLD: MASTERED${lufsStr})`;
             badgeBg = 'rgba(245, 158, 11, 0.25)';
             badgeColor = '#fbbf24';
             badgeBorder = 'rgba(245, 158, 11, 0.5)';
         } else if (this.displayMode === 'mastered' && this.masteredPeaks) {
-            badgeText = `POST-PROCESSED MASTER${this.masteredStats ? ` • ${this.masteredStats.integrated.toFixed(1)} LUFS | ${this.masteredStats.truePeak.toFixed(1)} dBTP` : ''}`;
+            const lufsVal = this.masteredStats?.integrated ?? this.masteredStats?.integratedLUFS ?? this.masteredStats?.lufs;
+            const tpVal = this.masteredStats?.truePeak ?? this.masteredStats?.truePeakDb ?? this.masteredStats?.peakDb;
+            let metaStr = '';
+            if (lufsVal !== undefined && lufsVal !== null && !isNaN(lufsVal) && tpVal !== undefined && tpVal !== null && !isNaN(tpVal)) {
+                metaStr = ` • ${Number(lufsVal).toFixed(1)} LUFS | ${Number(tpVal).toFixed(1)} dBTP`;
+            } else if (lufsVal !== undefined && lufsVal !== null && !isNaN(lufsVal)) {
+                metaStr = ` • ${Number(lufsVal).toFixed(1)} LUFS`;
+            }
+            badgeText = `POST-PROCESSED MASTER${metaStr}`;
             badgeBg = 'rgba(16, 185, 129, 0.25)';
             badgeColor = '#34d399';
             badgeBorder = 'rgba(16, 185, 129, 0.5)';

@@ -1632,8 +1632,9 @@ class MasteringApp {
             const targetSuffix = exportTarget !== 'none' ? `_${exportTarget.toUpperCase()}` : '';
             const filename = `${baseName}_Mastered${targetSuffix}_${bitDepth}bit.wav`;
 
-            const normInfo = stats.normalizationAppliedDb ? ` (${stats.normalizationAppliedDb >= 0 ? '+' : ''}${stats.normalizationAppliedDb.toFixed(1)} dB norm)` : '';
-            progressText.textContent = `Master: ${stats.integrated.toFixed(1)} LUFS${normInfo} • Saving WAV...`;
+            const normInfo = stats?.normalizationAppliedDb ? ` (${stats.normalizationAppliedDb >= 0 ? '+' : ''}${stats.normalizationAppliedDb.toFixed(1)} dB norm)` : '';
+            const masterLufs = stats?.integrated ?? stats?.integratedLUFS ?? stats?.lufs ?? -14.0;
+            progressText.textContent = `Master: ${Number(masterLufs).toFixed(1)} LUFS${normInfo} • Saving WAV...`;
             WavExporter.downloadWav(masteredBuffer, filename, bitDepth, enableDither);
 
             setTimeout(() => {

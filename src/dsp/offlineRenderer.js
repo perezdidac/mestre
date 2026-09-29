@@ -143,7 +143,7 @@ export class OfflineMasteringRenderer {
             let finalBuffer = renderedBuffer;
             if (masterParams.targetLufs !== undefined && masterParams.targetLufs !== null && !isNaN(masterParams.targetLufs)) {
                 const targetLufs = masterParams.targetLufs;
-                const currentLufs = finalStats.integrated;
+                const currentLufs = finalStats.integrated ?? finalStats.integratedLUFS ?? -14.0;
                 const deltaDb = targetLufs - currentLufs;
                 if (Math.abs(deltaDb) > 0.1 && Math.abs(deltaDb) <= 12.0) {
                     if (onProgress) onProgress(0.98, `Applying ${targetLufs.toFixed(1)} LUFS Streaming Normalization...`);
@@ -222,7 +222,7 @@ export class OfflineMasteringRenderer {
         let finalBuffer = outputBuffer;
         if (masterParams.targetLufs !== undefined && masterParams.targetLufs !== null && !isNaN(masterParams.targetLufs)) {
             const targetLufs = masterParams.targetLufs;
-            const currentLufs = finalStats.integrated;
+            const currentLufs = finalStats.integrated ?? finalStats.integratedLUFS ?? -14.0;
             const deltaDb = targetLufs - currentLufs;
             if (Math.abs(deltaDb) > 0.1 && Math.abs(deltaDb) <= 12.0) {
                 if (onProgress) onProgress(0.98, `Applying ${targetLufs.toFixed(1)} LUFS Streaming Normalization (${deltaDb >= 0 ? '+' : ''}${deltaDb.toFixed(1)} dB)...`);
@@ -395,7 +395,19 @@ export class OfflineMasteringRenderer {
 
         if (onProgress) onProgress(0.85, 'Analyzing post-processed metrics...');
         const lufsMeter = new LUFSMeter(sampleRate);
-        const stats = lufsMeter.analyzeAudioBuffer(masteredBuffer);
+        const rawStats = lufsMeter.analyzeAudioBuffer(masteredBuffer);
+        const lufsVal = rawStats.integratedLUFS ?? rawStats.integrated ?? -14.0;
+        const tpVal = rawStats.truePeakDb ?? rawStats.peakDb ?? -0.5;
+
+        const stats = {
+            ...rawStats,
+            integratedLUFS: lufsVal,
+            integrated: lufsVal,
+            lufs: lufsVal,
+            truePeak: tpVal,
+            truePeakDb: tpVal,
+            peakDb: rawStats.peakDb ?? tpVal
+        };
 
         if (onProgress) onProgress(1.0, 'Master waveform ready!');
 
