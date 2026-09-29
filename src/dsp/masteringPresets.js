@@ -71,7 +71,7 @@ export const MASTERING_PRESETS = [
                 ceiling: -1.0,
                 release: 90.0,
                 softClip: false,
-                drive: 0.8
+                drive: 2.0
             }
         }
     },
@@ -534,14 +534,49 @@ export class PresetManager {
         } catch (_) {}
     }
 
-    static applyPreset(preset, rack) {
+    static applyPreset(preset, rack, targetTrack = null) {
         if (!preset || !preset.settings || !rack) return false;
 
         const isCleanFlat = preset.id === 'initial_clean_bypass';
+        // Deep copy settings to avoid mutating static preset definitions
+        const settings = JSON.parse(JSON.stringify(preset.settings));
+
+        // Adaptive commercial level boost for quiet tracks
+        if (!isCleanFlat && targetTrack && preset.targetLufs !== undefined) {
+            const inputLufs = targetTrack.lufs != null ? targetTrack.lufs : (targetTrack.peakDb != null ? targetTrack.peakDb - 8.0 : -20.0);
+            const lufsDeficit = preset.targetLufs - inputLufs;
+            const peakDeficit = (targetTrack.peakDb != null && targetTrack.peakDb < -3.0) ? (Math.abs(targetTrack.peakDb) - 1.0) : 0;
+            const boostDb = Math.max(0.0, Math.min(18.0, Math.max(lufsDeficit, peakDeficit)));
+
+            if (boostDb > 0.5) {
+                if (!settings.lookahead_limiter) {
+                    settings.lookahead_limiter = {
+                        bypassed: false,
+                        ceiling: -1.0,
+                        release: 80.0,
+                        softClip: true,
+                        drive: Number(boostDb.toFixed(1))
+                    };
+                } else {
+                    settings.lookahead_limiter.bypassed = false;
+                    const baseDrive = settings.lookahead_limiter.drive || 0.0;
+                    settings.lookahead_limiter.drive = Number((baseDrive + boostDb).toFixed(1));
+                    if (settings.lookahead_limiter.ceiling === undefined) {
+                        settings.lookahead_limiter.ceiling = -1.0;
+                    }
+                }
+
+                // If compressor is engaged, adapt threshold to input level so it actually acts on quieter audio
+                if (settings.master_compressor && settings.master_compressor.bypassed === false) {
+                    const baseThresh = settings.master_compressor.threshold || -14.0;
+                    settings.master_compressor.threshold = Math.max(-32.0, Math.min(-8.0, baseThresh - boostDb * 0.4));
+                }
+            }
+        }
 
         // 1. Configure and engage ONLY the modules specified by this preset
         for (const mod of rack.modules) {
-            const params = preset.settings[mod.type];
+            const params = settings[mod.type];
             if (params && !isCleanFlat) {
                 const shouldBypass = params.bypassed !== undefined ? !!params.bypassed : false;
                 rack.setModuleBypass(mod.id, shouldBypass);
@@ -554,7 +589,7 @@ export class PresetManager {
 
         // 2. For creative presets, auto-add any active modules specified in preset if not currently in rack
         if (!isCleanFlat) {
-            for (const [modType, params] of Object.entries(preset.settings)) {
+            for (const [modType, params] of Object.entries(settings)) {
                 if (params && params.bypassed === false) {
                     const exists = rack.modules.some(m => m.type === modType);
                     if (!exists) {

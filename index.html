@@ -165,6 +165,18 @@
                     </div>
                 </div>
 
+                <div class="waveform-header-toolbar" id="target-waveform-toolbar">
+                    <div class="waveform-mode-pills">
+                        <button class="wave-pill active" data-mode="original" id="btn-wave-orig">Original</button>
+                        <button class="wave-pill" data-mode="mastered" id="btn-wave-mastered" title="Display rendered post-processed master waveform">Mastered</button>
+                        <button class="wave-pill" data-mode="comparison" id="btn-wave-comparison" title="Overlay original vs mastered waveforms">Comparison</button>
+                    </div>
+                    <button class="btn btn-secondary btn-render-wave" id="btn-render-master-wave" title="Render entire song through current mastering rack and visualize post-processing wave">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>
+                        <span id="label-render-wave">RENDER MASTER WAVE</span>
+                    </button>
+                </div>
+
                 <div class="waveform-container">
                     <canvas class="waveform-canvas" id="canvas-target-waveform"></canvas>
                 </div>

@@ -254,4 +254,154 @@ export class OfflineMasteringRenderer {
             stats: finalStats
         };
     }
+
+    /**
+     * Rapid in-memory offline render of an audio buffer through the active Modular Mastering Rack
+     * Used for on-demand & live post-processing waveform rendering and pre-flight re-verification.
+     * @param {AudioBuffer} targetAudioBuffer 
+     * @param {Object} rack 
+     * @param {Function} onProgress 
+     * @returns {Promise<{masteredBuffer: AudioBuffer, stats: Object}>}
+     */
+    static async renderRack(targetAudioBuffer, rack, onProgress = null) {
+        if (!targetAudioBuffer || !rack) return null;
+        const sampleRate = targetAudioBuffer.sampleRate;
+        const numChannels = Math.max(2, targetAudioBuffer.numberOfChannels);
+        const length = targetAudioBuffer.length;
+
+        if (onProgress) onProgress(0.1, 'Building offline DSP mastering graph...');
+        const offlineCtx = new OfflineAudioContext(numChannels, length, sampleRate);
+
+        const source = offlineCtx.createBufferSource();
+        source.buffer = targetAudioBuffer;
+
+        let currentNode = source;
+
+        // Iterate through active rack modules in sequence
+        for (const mod of rack.modules) {
+            if (mod.bypassed) continue;
+
+            if (mod.type === 'parametric_eq' && mod.params?.bands) {
+                for (const b of mod.params.bands) {
+                    if (b.enabled && Math.abs(b.gain || 0) > 0.05) {
+                        const filter = offlineCtx.createBiquadFilter();
+                        filter.type = b.type || 'peaking';
+                        filter.frequency.value = b.freq;
+                        filter.gain.value = b.gain;
+                        filter.Q.value = b.q || 1.4;
+                        currentNode.connect(filter);
+                        currentNode = filter;
+                    }
+                }
+            } else if (mod.type === 'master_compressor') {
+                const comp = offlineCtx.createDynamicsCompressor();
+                comp.threshold.value = mod.params.threshold !== undefined ? mod.params.threshold : -14.0;
+                comp.ratio.value = mod.params.ratio !== undefined ? mod.params.ratio : 1.5;
+                comp.attack.value = Math.max(0.0001, (mod.params.attack || 30.0) / 1000.0);
+                comp.release.value = Math.max(0.001, (mod.params.release || 120.0) / 1000.0);
+                comp.knee.value = mod.params.knee !== undefined ? mod.params.knee : 6.0;
+                currentNode.connect(comp);
+                currentNode = comp;
+
+                if (mod.params.makeup && Math.abs(mod.params.makeup) > 0.05) {
+                    const mkGain = offlineCtx.createGain();
+                    mkGain.gain.value = Math.pow(10.0, mod.params.makeup / 20.0);
+                    currentNode.connect(mkGain);
+                    currentNode = mkGain;
+                }
+            } else if (mod.type === 'tube_saturator' && mod.params?.drive > 0.2) {
+                const shaper = offlineCtx.createWaveShaper();
+                const n = 2048;
+                const curve = new Float32Array(n);
+                const k = 1.0 + (mod.params.drive || 2.0) * 0.12;
+                for (let i = 0; i < n; i++) {
+                    const x = (i * 2) / n - 1;
+                    curve[i] = Math.tanh(x * k) / Math.tanh(k);
+                }
+                shaper.curve = curve;
+                shaper.oversample = '2x';
+                currentNode.connect(shaper);
+                currentNode = shaper;
+            } else if (mod.type === 'stereo_imager' && mod.params?.width !== undefined) {
+                const width = mod.params.width / 100.0;
+                if (Math.abs(width - 1.0) > 0.05) {
+                    const splitter = offlineCtx.createChannelSplitter(2);
+                    const merger = offlineCtx.createChannelMerger(2);
+                    const gainL = offlineCtx.createGain();
+                    const gainR = offlineCtx.createGain();
+                    gainL.gain.value = width;
+                    gainR.gain.value = width;
+
+                    currentNode.connect(splitter);
+                    splitter.connect(gainL, 0);
+                    splitter.connect(gainR, 1);
+                    gainL.connect(merger, 0, 0);
+                    gainR.connect(merger, 0, 1);
+                    currentNode = merger;
+                }
+            } else if (mod.type === 'lookahead_limiter') {
+                const drive = mod.params.drive !== undefined ? mod.params.drive : 0.0;
+                if (drive > 0.01) {
+                    const drvNode = offlineCtx.createGain();
+                    drvNode.gain.value = Math.pow(10.0, drive / 20.0);
+                    currentNode.connect(drvNode);
+                    currentNode = drvNode;
+                }
+
+                const lim = offlineCtx.createDynamicsCompressor();
+                const ceiling = mod.params.ceiling !== undefined ? mod.params.ceiling : -0.5;
+                lim.threshold.value = ceiling - 0.2;
+                lim.ratio.value = 20.0;
+                lim.attack.value = 0.001;
+                lim.release.value = Math.max(0.005, (mod.params.release || 80.0) / 1000.0);
+                lim.knee.value = 0.0;
+                currentNode.connect(lim);
+                currentNode = lim;
+
+                if (mod.params.softClip !== false) {
+                    const clipper = offlineCtx.createWaveShaper();
+                    const n = 2048;
+                    const curve = new Float32Array(n);
+                    for (let i = 0; i < n; i++) {
+                        const x = (i * 2) / n - 1;
+                        const absX = Math.abs(x);
+                        if (absX <= 0.85) {
+                            curve[i] = x;
+                        } else {
+                            const sign = x >= 0 ? 1 : -1;
+                            const over = (absX - 0.85) / 0.15;
+                            const cl = Math.min(1.0, over);
+                            curve[i] = sign * (0.85 + 0.15 * (cl - (cl * cl * cl) / 3));
+                        }
+                    }
+                    clipper.curve = curve;
+                    clipper.oversample = '2x';
+                    currentNode.connect(clipper);
+                    currentNode = clipper;
+                }
+
+                const ceilGain = offlineCtx.createGain();
+                ceilGain.gain.value = Math.pow(10.0, ceiling / 20.0);
+                currentNode.connect(ceilGain);
+                currentNode = ceilGain;
+            }
+        }
+
+        currentNode.connect(offlineCtx.destination);
+        source.start(0);
+
+        if (onProgress) onProgress(0.4, 'Rendering full audio master buffer...');
+        const masteredBuffer = await offlineCtx.startRendering();
+
+        if (onProgress) onProgress(0.85, 'Analyzing post-processed metrics...');
+        const lufsMeter = new LUFSMeter(sampleRate);
+        const stats = lufsMeter.analyzeAudioBuffer(masteredBuffer);
+
+        if (onProgress) onProgress(1.0, 'Master waveform ready!');
+
+        return {
+            masteredBuffer,
+            stats
+        };
+    }
 }

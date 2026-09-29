@@ -17,6 +17,10 @@ export class WaveformView {
         };
 
         this.peaks = null;
+        this.originalPeaks = null;
+        this.masteredPeaks = null;
+        this.masteredStats = null;
+        this.displayMode = 'original'; // 'original' | 'mastered' | 'comparison'
         this.duration = 0;
         this.currentTime = 0;
         this.loopStart = 0;
@@ -46,13 +50,37 @@ export class WaveformView {
     setTrackData(track) {
         if (!track) {
             this.peaks = null;
+            this.originalPeaks = null;
+            this.masteredPeaks = null;
+            this.masteredStats = null;
             this.duration = 0;
             this.draw();
             return;
         }
-        this.peaks = track.waveformPeaks;
+        this.originalPeaks = track.waveformPeaks;
+        this.peaks = this.displayMode === 'mastered' && this.masteredPeaks ? this.masteredPeaks : this.originalPeaks;
         this.duration = track.duration;
         this.loopEnd = track.duration;
+        this.draw();
+    }
+
+    setMasteredPeaks(peaks, stats = null) {
+        this.masteredPeaks = peaks;
+        this.masteredStats = stats;
+        this.peaks = peaks;
+        this.displayMode = 'mastered';
+        this.draw();
+    }
+
+    setDisplayMode(mode) {
+        this.displayMode = mode;
+        if (mode === 'original') {
+            this.peaks = this.originalPeaks;
+        } else if (mode === 'mastered') {
+            this.peaks = this.masteredPeaks || this.originalPeaks;
+        } else if (mode === 'comparison') {
+            this.peaks = this.masteredPeaks || this.originalPeaks;
+        }
         this.draw();
     }
 
@@ -175,34 +203,99 @@ export class WaveformView {
         }
 
         // 3. Draw Waveform Peaks
-        const barWidth = Math.max(1, w / numBins);
         const halfH = midY * 0.92;
 
-        for (let i = 0; i < numBins; i++) {
-            const x = (i / numBins) * w;
-            const isPlayed = x <= progressX;
+        const renderBins = (peaksObj, waveCol, rmsCol, outerAlpha = 0.6, rmsAlpha = 0.95) => {
+            if (!peaksObj || !peaksObj.peaksMax) return;
+            const pMax = peaksObj.peaksMax;
+            const pMin = peaksObj.peaksMin;
+            const pRms = peaksObj.peaksRms;
+            const bins = peaksObj.numBins || numBins;
+            const bWidth = Math.max(1, w / bins);
 
-            const maxVal = pMax[i];
-            const minVal = pMin[i];
-            const rmsVal = pRms[i];
+            for (let i = 0; i < bins; i++) {
+                const x = (i / bins) * w;
+                const isPlayed = x <= progressX;
 
-            const topY = midY - maxVal * halfH;
-            const bottomY = midY - minVal * halfH;
-            const rmsTopY = midY - rmsVal * halfH;
-            const rmsBottomY = midY + rmsVal * halfH;
+                const maxVal = pMax[i];
+                const minVal = pMin[i];
+                const rmsVal = pRms[i];
 
-            // Outer peak line
-            ctx.fillStyle = isPlayed ? '#ffffff' : this.options.waveColor;
-            ctx.globalAlpha = isPlayed ? 0.9 : 0.6;
-            ctx.fillRect(x, topY, barWidth, Math.max(1, bottomY - topY));
+                const topY = midY - maxVal * halfH;
+                const bottomY = midY - minVal * halfH;
+                const rmsTopY = midY - rmsVal * halfH;
+                const rmsBottomY = midY + rmsVal * halfH;
 
-            // Inner RMS core (dense energy)
-            ctx.fillStyle = this.options.rmsColor;
-            ctx.globalAlpha = 0.95;
-            ctx.fillRect(x, rmsTopY, barWidth, Math.max(1, rmsBottomY - rmsTopY));
+                // Outer peak line
+                ctx.fillStyle = isPlayed ? '#ffffff' : waveCol;
+                ctx.globalAlpha = isPlayed ? 0.9 : outerAlpha;
+                ctx.fillRect(x, topY, bWidth, Math.max(1, bottomY - topY));
+
+                // Inner RMS core (dense energy)
+                ctx.fillStyle = rmsCol;
+                ctx.globalAlpha = rmsAlpha;
+                ctx.fillRect(x, rmsTopY, bWidth, Math.max(1, rmsBottomY - rmsTopY));
+            }
+        };
+
+        if (this.displayMode === 'comparison' && this.originalPeaks && this.masteredPeaks) {
+            // Render original dry waveform in translucent cyan in background
+            renderBins(this.originalPeaks, '#06b6d4', 'rgba(6, 182, 212, 0.4)', 0.35, 0.5);
+            // Render mastered post-processed waveform on top in radiant gold/amber
+            renderBins(this.masteredPeaks, '#fbbf24', 'rgba(245, 158, 11, 0.85)', 0.75, 0.95);
+        } else if (this.displayMode === 'mastered' && this.masteredPeaks) {
+            // Render mastered post-processed waveform in radiant gold/amber
+            renderBins(this.masteredPeaks, '#fbbf24', 'rgba(245, 158, 11, 0.85)', 0.7, 0.95);
+        } else {
+            // Render original dry waveform
+            const pObj = this.originalPeaks || this.peaks;
+            renderBins(pObj, this.options.waveColor, this.options.rmsColor, 0.6, 0.95);
         }
 
         ctx.globalAlpha = 1.0;
+
+        // 4. Draw Waveform Display Mode Badge in top right corner
+        let badgeText = 'ORIGINAL DRY';
+        let badgeBg = 'rgba(6, 182, 212, 0.2)';
+        let badgeColor = '#22d3ee';
+        let badgeBorder = 'rgba(6, 182, 212, 0.4)';
+
+        if (this.displayMode === 'comparison' && this.masteredPeaks) {
+            badgeText = `COMPARISON (CYAN: DRY | GOLD: MASTERED ${this.masteredStats ? `[${this.masteredStats.integrated.toFixed(1)} LUFS]` : ''})`;
+            badgeBg = 'rgba(245, 158, 11, 0.25)';
+            badgeColor = '#fbbf24';
+            badgeBorder = 'rgba(245, 158, 11, 0.5)';
+        } else if (this.displayMode === 'mastered' && this.masteredPeaks) {
+            badgeText = `POST-PROCESSED MASTER${this.masteredStats ? ` • ${this.masteredStats.integrated.toFixed(1)} LUFS | ${this.masteredStats.truePeak.toFixed(1)} dBTP` : ''}`;
+            badgeBg = 'rgba(16, 185, 129, 0.25)';
+            badgeColor = '#34d399';
+            badgeBorder = 'rgba(16, 185, 129, 0.5)';
+        }
+
+        ctx.save();
+        ctx.font = 'bold 9px monospace';
+        const badgeWidth = ctx.measureText(badgeText).width + 14;
+        const badgeHeight = 16;
+        const badgeX = w - badgeWidth - 8;
+        const badgeY = 6;
+
+        ctx.fillStyle = badgeBg;
+        ctx.strokeStyle = badgeBorder;
+        ctx.lineWidth = 1;
+        if (ctx.roundRect) {
+            ctx.beginPath();
+            ctx.roundRect(badgeX, badgeY, badgeWidth, badgeHeight, 3);
+            ctx.fill();
+            ctx.stroke();
+        } else {
+            ctx.fillRect(badgeX, badgeY, badgeWidth, badgeHeight);
+            ctx.strokeRect(badgeX, badgeY, badgeWidth, badgeHeight);
+        }
+
+        ctx.fillStyle = badgeColor;
+        ctx.textBaseline = 'middle';
+        ctx.fillText(badgeText, badgeX + 7, badgeY + badgeHeight / 2);
+        ctx.restore();
 
         // 4. Draw Center Baseline
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';

@@ -49,6 +49,7 @@ class MasteringApp {
             onStateRestored: (description) => {
                 this.updateVisualizersFromRack();
                 if (this.modularRackView) this.modularRackView.render();
+                if (this.qualityInspector) this.qualityInspector.syncTunerControlsWithRack();
             }
         });
 
@@ -106,6 +107,9 @@ class MasteringApp {
         // Independent Decoupled Seek Callbacks
         this.targetWaveform.onSeek((time) => this.audioMgr.seekTarget(time));
         this.refWaveform.onSeek((time) => this.audioMgr.seekReference(time));
+
+        // Waveform Post-Processing Visualization Toolbar & Render Engine
+        this.initWaveformToolbar();
 
         // Spectrum visualizer
         const canvasSpectrum = document.getElementById('canvas-spectrum');
@@ -327,6 +331,9 @@ class MasteringApp {
                 this.historyManager.pushSnapshot(description);
                 this.updateVisualizersFromRack();
                 if (this.modularRackView) this.modularRackView.render();
+            },
+            onRenderMasterRequested: async (onComplete) => {
+                await this.renderMasterWaveform(true, onComplete);
             }
         });
         this.qualityInspector.updateStatusBadge();
@@ -433,9 +440,10 @@ class MasteringApp {
                 const targetPreset = standardPreset || customPreset;
 
                 if (targetPreset && this.audioMgr.rack) {
-                    PresetManager.applyPreset(targetPreset, this.audioMgr.rack);
+                    PresetManager.applyPreset(targetPreset, this.audioMgr.rack, this.targetTrack || this.audioMgr.targetTrack);
                     this.updateVisualizersFromRack();
                     if (this.modularRackView) this.modularRackView.render();
+                    if (this.qualityInspector) this.qualityInspector.syncTunerControlsWithRack();
 
                     // Notify audioManager about estimated target LUFS for Auto-Gain Match
                     if (targetPreset.targetLufs !== undefined) {
@@ -522,9 +530,10 @@ class MasteringApp {
                 `;
 
                 card.querySelector('.btn-load-preset-card').addEventListener('click', () => {
-                    PresetManager.applyPreset(preset, this.audioMgr.rack);
+                    PresetManager.applyPreset(preset, this.audioMgr.rack, this.targetTrack || this.audioMgr.targetTrack);
                     this.updateVisualizersFromRack();
                     if (this.modularRackView) this.modularRackView.render();
+                    if (this.qualityInspector) this.qualityInspector.syncTunerControlsWithRack();
                     if (preset.targetLufs !== undefined) this.audioMgr.setMasteredLufs(preset.targetLufs);
                     this.historyManager.pushSnapshot(`Preset: ${preset.name}`);
                     const sel = document.getElementById('select-master-preset');
@@ -940,6 +949,30 @@ class MasteringApp {
         this.targetTrack = track;
         this.audioMgr.setTargetTrack(track);
         this.targetWaveform.setTrackData(track);
+
+        // Reset waveform toolbar buttons to original mode
+        const btnOrig = document.getElementById('btn-wave-orig');
+        const btnMast = document.getElementById('btn-wave-mastered');
+        const btnComp = document.getElementById('btn-wave-comparison');
+        if (btnOrig) btnOrig.classList.add('active');
+        if (btnMast) btnMast.classList.remove('active');
+        if (btnComp) btnComp.classList.remove('active');
+        this.targetWaveform.setDisplayMode('original');
+
+        // If a preset is already selected, adaptively calibrate to this track's volume level
+        const selectPreset = document.getElementById('select-master-preset');
+        if (selectPreset && selectPreset.value && this.audioMgr.rack) {
+            const presetId = selectPreset.value;
+            const standardPreset = MASTERING_PRESETS.find(p => p.id === presetId);
+            const customPreset = PresetManager.getCustomPresets().find(p => p.id === presetId);
+            const targetPreset = standardPreset || customPreset;
+            if (targetPreset) {
+                PresetManager.applyPreset(targetPreset, this.audioMgr.rack, track);
+                this.updateVisualizersFromRack();
+                if (this.modularRackView) this.modularRackView.render();
+                if (this.qualityInspector) this.qualityInspector.syncTunerControlsWithRack();
+            }
+        }
 
         // Update Deck Card UI
         const card = document.getElementById('card-target-deck');
@@ -1370,6 +1403,149 @@ class MasteringApp {
     }
 
     /**
+     * Target Waveform Mode Switcher & Render Toolbar
+     */
+    initWaveformToolbar() {
+        const btnOrig = document.getElementById('btn-wave-orig');
+        const btnMast = document.getElementById('btn-wave-mastered');
+        const btnComp = document.getElementById('btn-wave-comparison');
+        const btnRender = document.getElementById('btn-render-master-wave');
+
+        const setPillActive = (activeBtn) => {
+            [btnOrig, btnMast, btnComp].forEach(btn => {
+                if (btn) btn.classList.toggle('active', btn === activeBtn);
+            });
+        };
+
+        if (btnOrig) {
+            btnOrig.addEventListener('click', () => {
+                setPillActive(btnOrig);
+                this.targetWaveform.setDisplayMode('original');
+            });
+        }
+
+        if (btnMast) {
+            btnMast.addEventListener('click', async () => {
+                if (!this.targetWaveform.masteredPeaks) {
+                    await this.renderMasterWaveform(true);
+                }
+                setPillActive(btnMast);
+                this.targetWaveform.setDisplayMode('mastered');
+            });
+        }
+
+        if (btnComp) {
+            btnComp.addEventListener('click', async () => {
+                if (!this.targetWaveform.masteredPeaks) {
+                    await this.renderMasterWaveform(true);
+                }
+                setPillActive(btnComp);
+                this.targetWaveform.setDisplayMode('comparison');
+            });
+        }
+
+        if (btnRender) {
+            btnRender.addEventListener('click', () => {
+                this.renderMasterWaveform(true);
+            });
+        }
+    }
+
+    /**
+     * Render the entire song through current active mastering rack in high-speed offline context
+     * Produces post-processed waveform peaks & ITU-R BS.1770-4 metrics on demand.
+     */
+    async renderMasterWaveform(showFeedback = true, onComplete = null) {
+        if (!this.targetTrack || !this.targetTrack.audioBuffer) {
+            if (showFeedback) alert('Please load a target audio track first.');
+            return;
+        }
+        if (!this.audioMgr.rack) {
+            if (showFeedback) alert('Mastering rack is not initialized yet.');
+            return;
+        }
+
+        if (!this.loader) {
+            this.loader = new AudioLoader(this.audioMgr.ctx);
+        }
+
+        const btnRender = document.getElementById('btn-render-master-wave');
+        const labelRender = document.getElementById('label-render-wave');
+        const origText = labelRender ? labelRender.textContent : 'RENDER MASTER WAVE';
+
+        if (btnRender) {
+            btnRender.disabled = true;
+            btnRender.classList.add('rendering');
+        }
+        if (labelRender) {
+            labelRender.textContent = 'RENDERING 0%...';
+        }
+
+        try {
+            const result = await OfflineMasteringRenderer.renderRack(
+                this.targetTrack.audioBuffer,
+                this.audioMgr.rack,
+                (progress, status) => {
+                    if (labelRender) {
+                        labelRender.textContent = `RENDERING ${Math.round(progress * 100)}%...`;
+                    }
+                }
+            );
+
+            if (result && result.masteredBuffer) {
+                // Extract waveform peaks using AudioLoader
+                const masteredPeaks = this.loader.extractWaveformPeaks(result.masteredBuffer);
+                this.targetWaveform.setMasteredPeaks(masteredPeaks, result.stats);
+
+                // Update Waveform Mode Pills
+                const btnOrig = document.getElementById('btn-wave-orig');
+                const btnMast = document.getElementById('btn-wave-mastered');
+                const btnComp = document.getElementById('btn-wave-comparison');
+                if (btnOrig) btnOrig.classList.remove('active');
+                if (btnMast) btnMast.classList.add('active');
+                if (btnComp) btnComp.classList.remove('active');
+
+                // Notify Quality Inspector if open or cached
+                if (this.qualityInspector) {
+                    this.qualityInspector.setMasteredAnalysis(result.stats, result.masteredBuffer);
+                }
+
+                if (labelRender) {
+                    labelRender.textContent = '✓ MASTER RENDERED';
+                }
+                setTimeout(() => {
+                    if (labelRender) labelRender.textContent = origText;
+                    if (btnRender) {
+                        btnRender.disabled = false;
+                        btnRender.classList.remove('rendering');
+                    }
+                }, 1800);
+
+                if (onComplete) {
+                    onComplete(result.masteredBuffer, result.stats);
+                }
+                return result;
+            }
+        } catch (err) {
+            console.error('Failed to render master waveform:', err);
+            if (labelRender) labelRender.textContent = 'RENDER FAILED';
+            setTimeout(() => {
+                if (labelRender) labelRender.textContent = origText;
+                if (btnRender) {
+                    btnRender.disabled = false;
+                    btnRender.classList.remove('rendering');
+                }
+            }, 2000);
+            if (showFeedback) alert(`Render master wave failed: ${err.message}`);
+        } finally {
+            if (btnRender) {
+                btnRender.disabled = false;
+                btnRender.classList.remove('rendering');
+            }
+        }
+    }
+
+    /**
      * Phase 4: Offline High-Speed Master Render & Browser Download
      */
     async handleExportMaster(bitDepth = 24, enableDither = true) {
@@ -1438,6 +1614,18 @@ class MasteringApp {
 
             this.audioMgr.setMasteredBuffer(masteredBuffer);
             this.metersView.setMasteredMetrics(stats);
+
+            // Update Target Deck Waveform with freshly exported master
+            if (this.loader && this.targetWaveform) {
+                const masteredPeaks = this.loader.extractWaveformPeaks(masteredBuffer);
+                this.targetWaveform.setMasteredPeaks(masteredPeaks, stats);
+                const btnOrig = document.getElementById('btn-wave-orig');
+                const btnMast = document.getElementById('btn-wave-mastered');
+                const btnComp = document.getElementById('btn-wave-comparison');
+                if (btnOrig) btnOrig.classList.remove('active');
+                if (btnMast) btnMast.classList.add('active');
+                if (btnComp) btnComp.classList.remove('active');
+            }
 
             // Generate filename based on target track name & streaming target
             const baseName = this.targetTrack.name.replace(/\.[^/.]+$/, '');
